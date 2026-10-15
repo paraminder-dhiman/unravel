@@ -2,7 +2,7 @@ import bpy
 
 
 class UNRAVEL_PT_main(bpy.types.Panel):
-    bl_label = "Unrave"
+    bl_label = "Unravel"
     bl_idname = "UNRAVEL_PT_main"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
