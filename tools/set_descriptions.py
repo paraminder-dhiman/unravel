@@ -11,6 +11,7 @@ DESCRIPTIONS = {
         "Thickness": "How thick the cloth looks at its torn edges",
         "Lip Width": "How far the thick edge reaches from the hole before fading back to thin cloth",
         "Whole Cloth": "Make the entire cloth solid instead of only thickening around the holes",
+        "Edge Smoothing": "Smooths the stepped outline of each hole. 0 keeps the raw edge",
     },
     "Unravel Threads": {
         "Cloth": "The torn cloth these threads grow from",
@@ -32,6 +33,8 @@ DESCRIPTIONS = {
         "Contact Depth": "Threads deeper than this below the cloth are left alone, so they can hang behind it",
         "Viewport Density": "Share of threads shown in the viewport. Renders always show all of them",
         "Material": "Material used by these threads",
+        "Direction Random": "Tilts threads away from the weave by a random angle. 0 keeps them neatly aligned",
+        "Frizz Waves": "How many big wiggles each thread makes. Low gives lazy bends, high gives tight frizz",
     },
     "Unravel Strand": {
         "Path": "The curve this strand follows",
