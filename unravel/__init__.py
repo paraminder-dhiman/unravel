@@ -6,6 +6,15 @@ ASSET_FILE = os.path.join(os.path.dirname(__file__), "assets", "unravel_nodes.bl
 GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand")
 
 
+TEAR_INPUTS = ("Hole Size", "Edge Noise", "Noise Scale", "Detail", "Seed")
+THICKNESS_INPUTS = ("Thickness", "Lip Width", "Whole Cloth")
+THREAD_SHAPE_INPUTS = ("Density", "Length", "Length Random", "Root Width", "Tip Width")
+THREAD_STYLE_INPUTS = ("Clumping", "Curl Radius", "Curl Turns", "Frizz", "Droop", "Resolution", "Seed")
+CONTACT_INPUTS = ("Surface Contact", "Contact Offset", "Contact Depth")
+STRAND_INPUTS = ("Path", "Fibers", "Fiber Spread", "Twist", "Tip Flare", "Root Width", "Tip Width",
+                 "Curl Radius", "Curl Turns", "Frizz", "Point Spacing", "Seed")
+
+
 STRAY_VALUES = {
     "Density": 40.0,
     "Length": 0.07,
@@ -30,11 +39,44 @@ def load_node_groups():
         data_to.node_groups = [name for name in data_from.node_groups if name in missing]
 
 
-def set_input(modifier, name, value):
+def find_input(modifier, name):
     for item in modifier.node_group.interface.items_tree:
         if item.item_type == 'SOCKET' and item.in_out == 'INPUT' and item.name == name:
-            getattr(modifier.properties.inputs, item.identifier).value = value
-            return
+            return getattr(modifier.properties.inputs, item.identifier)
+    return None
+
+
+def set_input(modifier, name, value):
+    socket = find_input(modifier, name)
+    if socket is not None:
+        socket.value = value
+
+
+def get_cloth(obj):
+    if obj is None:
+        return None
+    if obj.type == 'MESH' and "Unravel Tears" in obj.modifiers:
+        return obj
+    if obj.type == 'CURVES' and obj.parent and "Unravel Tears" in obj.parent.modifiers:
+        return obj.parent
+    return None
+
+
+def get_threads(cloth):
+    for child in cloth.children:
+        if child.type == 'CURVES' and "Unravel Fray" in child.modifiers:
+            return child
+    return None
+
+
+def draw_inputs(layout, modifier, names):
+    col = layout.column()
+    col.use_property_split = True
+    col.use_property_decorate = False
+    for name in names:
+        socket = find_input(modifier, name)
+        if socket is not None:
+            col.prop(socket, "value", text=name)
 
 
 class UNRAVEL_OT_make(bpy.types.Operator):
@@ -86,6 +128,29 @@ class UNRAVEL_OT_make(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class UNRAVEL_OT_paint_tears(bpy.types.Operator):
+    bl_idname = "unravel.paint_tears"
+    bl_label = "Paint Tears"
+    bl_description = "Switch to Weight Paint on the cloth's Tears group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return get_cloth(context.active_object) is not None
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        for obj in context.selected_objects:
+            obj.select_set(False)
+        cloth.select_set(True)
+        context.view_layer.objects.active = cloth
+        cloth.vertex_groups.active_index = cloth.vertex_groups["Tears"].index
+        bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+        return {'FINISHED'}
+
+
 class UNRAVEL_PT_main(bpy.types.Panel):
     bl_label = "Unravel"
     bl_idname = "UNRAVEL_PT_main"
@@ -95,11 +160,21 @@ class UNRAVEL_PT_main(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        obj = context.active_object
-        if obj is None:
+        cloth = get_cloth(context.active_object)
+        if cloth is None:
             layout.label(text="Select a cloth object", icon='INFO')
-        else:
-            layout.label(text=obj.name, icon='OBJECT_DATA')
+            layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
+            return
+        layout.label(text=cloth.name, icon='MOD_CLOTH')
+        if not cloth.data.uv_layers:
+            box = layout.box()
+            box.label(text="This cloth has no UVs", icon='ERROR')
+            box.label(text="Threads need UVs to follow the weave")
+        if context.mode == 'PAINT_WEIGHT':
+            box = layout.box()
+            box.label(text="Paint red where the cloth tears", icon='BRUSH_DATA')
+            draw_inputs(box, cloth.modifiers["Unravel Tears"], ("Hole Size", "Edge Noise"))
+            box.operator("object.mode_set", text="Done Painting", icon='CHECKMARK').mode = 'OBJECT'
 
 
 class UNRAVEL_PT_tears(bpy.types.Panel):
@@ -110,8 +185,63 @@ class UNRAVEL_PT_tears(bpy.types.Panel):
     bl_category = "Unravel"
     bl_parent_id = "UNRAVEL_PT_main"
 
+    @classmethod
+    def poll(cls, context):
+        return get_cloth(context.active_object) is not None
+
     def draw(self, context):
-        self.layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
+        layout = self.layout
+        tears = get_cloth(context.active_object).modifiers["Unravel Tears"]
+        layout.operator(UNRAVEL_OT_paint_tears.bl_idname, icon='BRUSH_DATA')
+        draw_inputs(layout, tears, TEAR_INPUTS)
+        layout.separator()
+        draw_inputs(layout, tears, THICKNESS_INPUTS)
+
+
+class ThreadsPanel:
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Unravel"
+    bl_parent_id = "UNRAVEL_PT_tears"
+    bl_options = {'DEFAULT_CLOSED'}
+    modifier_name = ""
+
+    @classmethod
+    def get_modifier(cls, context):
+        cloth = get_cloth(context.active_object)
+        threads = get_threads(cloth) if cloth else None
+        if threads is None:
+            return None
+        return threads.modifiers.get(cls.modifier_name)
+
+    @classmethod
+    def poll(cls, context):
+        return cls.get_modifier(context) is not None
+
+    def draw_header(self, context):
+        self.layout.prop(self.get_modifier(context), "show_viewport", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        modifier = self.get_modifier(context)
+        layout.enabled = modifier.show_viewport
+        draw_inputs(layout, modifier, THREAD_SHAPE_INPUTS)
+        layout.separator()
+        draw_inputs(layout, modifier, THREAD_STYLE_INPUTS)
+        layout.separator()
+        draw_inputs(layout, modifier, CONTACT_INPUTS)
+
+
+class UNRAVEL_PT_fray(ThreadsPanel, bpy.types.Panel):
+    bl_label = "Fray Threads"
+    bl_idname = "UNRAVEL_PT_fray"
+    modifier_name = "Unravel Fray"
+
+
+class UNRAVEL_PT_strays(ThreadsPanel, bpy.types.Panel):
+    bl_label = "Stray Threads"
+    bl_idname = "UNRAVEL_PT_strays"
+    modifier_name = "Unravel Strays"
 
 
 class UNRAVEL_PT_strands(bpy.types.Panel):
@@ -122,15 +252,40 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
     bl_category = "Unravel"
     bl_parent_id = "UNRAVEL_PT_main"
 
+    @classmethod
+    def poll(cls, context):
+        return get_cloth(context.active_object) is not None
+
     def draw(self, context):
-        self.layout.label(text="Threads drawn along curves")
+        layout = self.layout
+        threads = get_threads(get_cloth(context.active_object))
+        strands = [m for m in threads.modifiers if m.node_group and m.node_group.name == "Unravel Strand"] if threads else []
+        if not strands:
+            layout.label(text="No drawn strands yet", icon='INFO')
+            return
+        for modifier in strands:
+            box = layout.box()
+            row = box.row()
+            row.prop(modifier, "show_viewport", text="")
+            row.label(text=modifier.name)
+            col = box.column()
+            col.enabled = modifier.show_viewport
+            draw_inputs(col, modifier, STRAND_INPUTS)
 
 
 def draw_object_menu(self, context):
     self.layout.separator()
     self.layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
 
-classes = (UNRAVEL_OT_make, UNRAVEL_PT_main, UNRAVEL_PT_tears, UNRAVEL_PT_strands)
+classes = (
+    UNRAVEL_OT_make,
+    UNRAVEL_OT_paint_tears,
+    UNRAVEL_PT_main,
+    UNRAVEL_PT_tears,
+    UNRAVEL_PT_fray,
+    UNRAVEL_PT_strays,
+    UNRAVEL_PT_strands,
+)
 
 
 def register():
