@@ -3,6 +3,7 @@ import os
 import random
 
 ASSET_FILE = os.path.join(os.path.dirname(__file__), "assets", "unravel_nodes.blend")
+HELP_FILE = os.path.join(os.path.dirname(__file__), "Help.txt")
 GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand")
 
 
@@ -110,7 +111,7 @@ def get_cloth(obj):
         return None
     if obj.type == 'MESH' and "Unravel Tears" in obj.modifiers:
         return obj
-    if obj.type == 'CURVES' and obj.parent and "Unravel Tears" in obj.parent.modifiers:
+    if obj.type in {'CURVES', 'CURVE'} and obj.parent and "Unravel Tears" in obj.parent.modifiers:
         return obj.parent
     return None
 
@@ -256,6 +257,58 @@ class UNRAVEL_OT_paint_tears(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
         return {'FINISHED'}
 
+class UNRAVEL_OT_add_strand(bpy.types.Operator):
+    bl_idname = "unravel.add_strand"
+    bl_label = "Unravel Strand"
+    bl_description = "Draw a loose thread strand on an Unravel cloth"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'OBJECT' and cloth is not None and get_threads(cloth) is not None
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        threads = get_threads(cloth)
+        load_node_groups()
+
+        curve = bpy.data.curves.new("Strand Path", 'CURVE')
+        curve.dimensions = '3D'
+        path = bpy.data.objects.new("Strand Path", curve)
+        for collection in cloth.users_collection:
+            collection.objects.link(path)
+        path.parent = cloth
+
+        strand = threads.modifiers.new("Unravel Strand", 'NODES')
+        strand.node_group = bpy.data.node_groups["Unravel Strand"]
+        set_input(strand, "Path", path)
+        apply_thread_material(cloth)
+
+        for obj in context.selected_objects:
+            obj.select_set(False)
+        path.select_set(True)
+        context.view_layer.objects.active = path
+        bpy.ops.object.mode_set(mode='EDIT')
+        context.scene.tool_settings.curve_paint_settings.depth_mode = 'SURFACE'
+        try:
+            bpy.ops.wm.tool_set_by_id(name="builtin.draw")
+        except RuntimeError:
+            pass
+        self.report({'INFO'}, "Draw on the cloth, then press Tab when you are done")
+        return {'FINISHED'}
+
+
+class UNRAVEL_OT_help(bpy.types.Operator):
+    bl_idname = "unravel.help"
+    bl_label = "Unravel Help"
+    bl_description = "Open the Unravel guide in your text editor"
+
+    def execute(self, context):
+        bpy.ops.wm.path_open(filepath=HELP_FILE)
+        return {'FINISHED'}
+
+
 class UNRAVEL_OT_randomize_seed(bpy.types.Operator):
     bl_idname = "unravel.randomize_seed"
     bl_label = "Randomize Seed"
@@ -326,12 +379,15 @@ class UNRAVEL_PT_main(bpy.types.Panel):
         layout = self.layout
         cloth = get_cloth(context.active_object)
         if cloth is None:
-            layout.label(text="Select a cloth object", icon='INFO')
+            row = layout.row()
+            row.label(text="Select a cloth object", icon='INFO')
+            row.operator(UNRAVEL_OT_help.bl_idname, text="", icon='HELP')
             layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
             return
         row = layout.row()
         row.label(text=cloth.name, icon='MOD_CLOTH')
         row.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
+        row.operator(UNRAVEL_OT_help.bl_idname, text="", icon='HELP')
         if not cloth.data.uv_layers:
             box = layout.box()
             box.label(text="This cloth has no UVs", icon='ERROR')
@@ -460,6 +516,7 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
         layout = self.layout
         threads = get_threads(get_cloth(context.active_object))
         strands = [m for m in threads.modifiers if m.node_group and m.node_group.name == "Unravel Strand"] if threads else []
+        layout.operator(UNRAVEL_OT_add_strand.bl_idname, text="Add Strand", icon='CURVE_BEZCURVE')
         if not strands:
             layout.label(text="No drawn strands yet", icon='INFO')
             return
@@ -473,6 +530,29 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
             draw_inputs(col, modifier, STRAND_INPUTS)
 
 
+class UNRAVEL_MT_object(bpy.types.Menu):
+    bl_label = "Unravel"
+    bl_idname = "UNRAVEL_MT_object"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
+        layout.operator(UNRAVEL_OT_paint_tears.bl_idname, icon='BRUSH_DATA')
+        layout.operator(UNRAVEL_OT_add_strand.bl_idname, text="Add Strand", icon='CURVE_BEZCURVE')
+        layout.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
+        layout.separator()
+        layout.operator(UNRAVEL_OT_help.bl_idname, icon='HELP')
+
+
+def draw_object_submenu(self, context):
+    self.layout.separator()
+    self.layout.menu(UNRAVEL_MT_object.bl_idname, icon='MOD_CLOTH')
+
+
+def draw_add_menu(self, context):
+    self.layout.operator(UNRAVEL_OT_add_strand.bl_idname, icon='CURVE_BEZCURVE')
+
+
 def draw_object_menu(self, context):
     if not UNRAVEL_OT_make.poll(context):
         return
@@ -482,8 +562,11 @@ def draw_object_menu(self, context):
 classes = (
     UNRAVEL_OT_make,
     UNRAVEL_OT_paint_tears,
+    UNRAVEL_OT_add_strand,
+    UNRAVEL_OT_help,
     UNRAVEL_OT_randomize_seed,
     UNRAVEL_OT_apply_preset,
+    UNRAVEL_MT_object,
     UNRAVEL_PT_main,
     UNRAVEL_PT_tears,
     UNRAVEL_PT_fray,
@@ -503,9 +586,13 @@ def register():
         update=update_cloth_colour,
     )
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_object_menu)
+    bpy.types.VIEW3D_MT_object.append(draw_object_submenu)
+    bpy.types.VIEW3D_MT_add.append(draw_add_menu)
 
 
 def unregister():
+    bpy.types.VIEW3D_MT_add.remove(draw_add_menu)
+    bpy.types.VIEW3D_MT_object.remove(draw_object_submenu)
     del bpy.types.Object.unravel_cloth_colour
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_object_menu)
     for cls in reversed(classes):

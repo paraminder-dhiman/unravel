@@ -1,0 +1,58 @@
+UNRAVEL · Torn cloth and frayed threads for Blender
+====================================================
+
+QUICK START
+1. Select a cloth mesh. It needs UVs for the threads to follow the weave.
+2. Right-click in the viewport and choose Make Unravel
+   (or use the Unravel tab in the N sidebar).
+3. Click Paint Tears and paint red where the cloth should tear.
+4. Click Done Painting. Holes, thick edges and threads appear.
+5. Try a look from Presets, then fine-tune in the Unravel tab.
+
+
+THE UNRAVEL TAB (press N in the viewport)
+Tears
+  Hole Size ........ how far holes eat into the painted area (0 = no holes)
+  Edge Noise ....... how ragged the edges are
+  Noise Scale ...... size of the ragged bits
+  Detail ........... extra subdivision for finer edges (heavier)
+  Thickness ........ how thick the torn edges look
+  Lip Width ........ how far the thickness reaches from each hole
+  Whole Cloth ...... makes the whole cloth solid
+
+Fray Threads and Stray Threads
+  Two layers of threads: short dense fray, and long loose strays.
+  The checkbox in each title turns that layer on or off.
+  Viewport Density . show fewer threads while working; renders show all
+  Density, Length .. how many threads, and how long
+  Clumping, Curl, Frizz, Droop ... the character of the threads
+  Surface Contact .. keeps threads from sinking into the cloth
+
+Thread Material
+  Take Colour from Cloth: threads use the cloth's own material, coloured
+  by where each thread grows. Untick it to pick your own colour.
+
+Strands
+  Hand-drawn loose threads. Use Add Strand (or Shift+A > Unravel Strand),
+  draw on the cloth, then press Tab when done.
+
+
+TIPS
+  · Every Seed has a refresh button for a quick new variation.
+  · Presets only change the look. Your paint is never touched.
+  · Everything is undoable with Ctrl+Z.
+  · All Unravel actions are also under Object > Unravel and in F3 search.
+
+
+TROUBLESHOOTING
+  No threads appear
+    · Paint some red: threads only grow along torn edges.
+    · Check the cloth has UVs (the panel warns you if not).
+    · Check Viewport Density is above 0.
+  Threads look white
+    · Switch the viewport to Rendered (Z > Rendered).
+  The viewport is slow
+    · Lower Viewport Density, Detail, or Resolution.
+
+
+Unravel is free and open source under the GPL.
