@@ -121,6 +121,51 @@ def get_threads(cloth):
             return child
     return None
 
+THREAD_MATERIAL_NAME = "Unravel Thread"
+
+
+def get_thread_material():
+    material = bpy.data.materials.get(THREAD_MATERIAL_NAME)
+    if material is None:
+        material = bpy.data.materials.new(THREAD_MATERIAL_NAME)
+        material.use_nodes = True
+        bsdf = material.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Base Color"].default_value = (0.45, 0.36, 0.25, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.85
+        material.diffuse_color = (0.45, 0.36, 0.25, 1.0)
+    return material
+
+
+def apply_thread_material(cloth):
+    threads = get_threads(cloth)
+    if threads is None:
+        return
+    thread_material = get_thread_material()
+    use_cloth = cloth.unravel_cloth_colour and cloth.active_material is not None
+    for modifier in threads.modifiers:
+        if modifier.type != 'NODES' or modifier.node_group is None:
+            continue
+        if modifier.node_group.name == "Unravel Threads":
+            set_input(modifier, "Material", cloth.active_material if use_cloth else thread_material)
+        elif modifier.node_group.name == "Unravel Strand":
+            set_input(modifier, "Material", thread_material)
+    sync_material_slots(threads)
+
+
+def sync_material_slots(threads):
+    materials = []
+    for modifier in threads.modifiers:
+        socket = find_input(modifier, "Material") if modifier.type == 'NODES' and modifier.node_group else None
+        if socket is not None and socket.value is not None and socket.value not in materials:
+            materials.append(socket.value)
+    threads.data.materials.clear()
+    for material in materials:
+        threads.data.materials.append(material)
+
+
+def update_cloth_colour(self, context):
+    apply_thread_material(self)
+
 
 def draw_inputs(layout, modifier, names):
     col = layout.column()
@@ -182,6 +227,8 @@ class UNRAVEL_OT_make(bpy.types.Operator):
         set_input(strays, "UV Map", uv_name)
         for input_name, value in STRAY_VALUES.items():
             set_input(strays, input_name, value)
+
+        apply_thread_material(cloth)
 
         self.report({'INFO'}, "Unravel is ready. Paint the Tears vertex group to cut holes")
         return {'FINISHED'}
@@ -364,6 +411,38 @@ class UNRAVEL_PT_strays(ThreadsPanel, bpy.types.Panel):
     bl_idname = "UNRAVEL_PT_strays"
     modifier_name = "Unravel Strays"
 
+class UNRAVEL_PT_material(bpy.types.Panel):
+    bl_label = "Thread Material"
+    bl_idname = "UNRAVEL_PT_material"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Unravel"
+    bl_parent_id = "UNRAVEL_PT_main"
+
+    @classmethod
+    def poll(cls, context):
+        return get_cloth(context.active_object) is not None
+
+    def draw(self, context):
+        layout = self.layout
+        cloth = get_cloth(context.active_object)
+        layout.prop(cloth, "unravel_cloth_colour")
+        if cloth.unravel_cloth_colour and cloth.active_material is not None:
+            layout.label(text="Using " + cloth.active_material.name, icon='MATERIAL')
+            return
+        if cloth.unravel_cloth_colour:
+            layout.label(text="The cloth has no material", icon='INFO')
+        material = get_thread_material()
+        bsdf = material.node_tree.nodes.get("Principled BSDF")
+        if bsdf is None:
+            layout.label(text="Edit " + material.name + " in the Shading tab", icon='MATERIAL')
+            return
+        col = layout.column()
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.prop(bsdf.inputs["Base Color"], "default_value", text="Colour")
+        col.prop(bsdf.inputs["Roughness"], "default_value", text="Roughness")
+
 
 class UNRAVEL_PT_strands(bpy.types.Panel):
     bl_label = "Strands"
@@ -409,6 +488,7 @@ classes = (
     UNRAVEL_PT_tears,
     UNRAVEL_PT_fray,
     UNRAVEL_PT_strays,
+    UNRAVEL_PT_material,
     UNRAVEL_PT_strands,
 )
 
@@ -416,10 +496,17 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.Object.unravel_cloth_colour = bpy.props.BoolProperty(
+        name="Take Colour from Cloth",
+        description="Threads use the cloth's own material, coloured by where each thread grows from",
+        default=True,
+        update=update_cloth_colour,
+    )
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_object_menu)
 
 
 def unregister():
+    del bpy.types.Object.unravel_cloth_colour
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_object_menu)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
