@@ -35,7 +35,11 @@ DESCRIPTIONS = {
         "Material": "Material used by these threads",
         "Direction Random": "Tilts threads away from the weave by a random angle. 0 keeps them neatly aligned",
         "Frizz Waves": "How many big wiggles each thread makes. Low gives lazy bends, high gives tight frizz",
+        "Bridges": "Share of threads that stay connected across narrow gaps. 0 means none",
+        "Bridge Gap": "Widest gap a thread can bridge. Narrower gaps get more bridges",
+        "Bridge Sag": "How much bridging threads sag in the middle",
     },
+    
     "Unravel Strand": {
         "Path": "The curve this strand follows",
         "Fibers": "Number of fibres twisted together in the strand",

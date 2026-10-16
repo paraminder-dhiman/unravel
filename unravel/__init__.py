@@ -13,6 +13,7 @@ THREAD_SHAPE_INPUTS = ("Density", "Length", "Length Random", "Root Width", "Tip 
 THREAD_STYLE_INPUTS = ("Clumping", "Direction Random", "Curl Radius", "Curl Turns", "Frizz", "Frizz Waves",
                        "Droop", "Resolution", "Seed")
 CONTACT_INPUTS = ("Surface Contact", "Contact Offset", "Contact Depth")
+BRIDGE_INPUTS = ("Bridges", "Bridge Gap", "Bridge Sag")
 STRAND_INPUTS = ("Path", "Fibers", "Fiber Spread", "Twist", "Tip Flare", "Root Width", "Tip Width",
                  "Curl Radius", "Curl Turns", "Frizz", "Point Spacing", "Seed")
 
@@ -38,14 +39,16 @@ PRESETS = {
     "BURLAP": {
         "Unravel Tears": {"Edge Noise": 0.7, "Noise Scale": 9.0, "Edge Smoothing": 8, "Thickness": 0.006,
                           "Lip Width": 0.05},
-        "Unravel Fray": {"Density": 220.0, "Length": 0.06, "Length Random": 0.8, "Root Width": 0.0022,
-                         "Tip Width": 0.0012, "Clumping": 0.55, "Direction Random": 0.45,
-                         "Curl Radius": 0.0012, "Curl Turns": 6.0, "Frizz": 0.55, "Frizz Waves": 1.5,
-                         "Droop": 0.15, "Resolution": 16},
-        "Unravel Strays": {"Density": 120.0, "Length": 0.28, "Length Random": 0.7, "Root Width": 0.0018,
-                           "Tip Width": 0.0012, "Clumping": 0.15, "Direction Random": 0.35,
-                           "Curl Radius": 0.0012, "Curl Turns": 12.0, "Frizz": 0.75, "Frizz Waves": 1.6,
-                           "Droop": 0.05, "Resolution": 48},
+        "Unravel Fray": {"Density": 220.0, "Length": 0.035, "Length Random": 0.6, "Root Width": 0.0022,
+                         "Tip Width": 0.0012, "Clumping": 0.65, "Direction Random": 0.25,
+                         "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.3, "Frizz Waves": 1.2,
+                         "Droop": 0.25, "Resolution": 24, "Bridges": 0.0, "Bridge Gap": 0.3,
+                         "Bridge Sag": 0.05},
+        "Unravel Strays": {"Density": 80.0, "Length": 0.12, "Length Random": 0.7, "Root Width": 0.0018,
+                           "Tip Width": 0.0012, "Clumping": 0.15, "Direction Random": 0.2,
+                           "Curl Radius": 0.0008, "Curl Turns": 4.0, "Frizz": 0.45, "Frizz Waves": 1.2,
+                           "Droop": 0.05, "Resolution": 64, "Bridges": 0.6, "Bridge Gap": 0.3,
+                           "Bridge Sag": 0.05},
     },
     "CANVAS": {
         "Unravel Tears": {"Edge Noise": 0.55, "Noise Scale": 11.0, "Edge Smoothing": 10, "Thickness": 0.003,
@@ -53,11 +56,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 420.0, "Length": 0.035, "Length Random": 0.7, "Root Width": 0.0012,
                          "Tip Width": 0.0007, "Clumping": 0.45, "Direction Random": 0.3,
                          "Curl Radius": 0.0006, "Curl Turns": 4.0, "Frizz": 0.3, "Frizz Waves": 1.3,
-                         "Droop": 0.05, "Resolution": 12},
+                         "Droop": 0.05, "Resolution": 12, "Bridges": 0.0, "Bridge Gap": 0.2,
+                         "Bridge Sag": 0.03},
         "Unravel Strays": {"Density": 70.0, "Length": 0.2, "Length Random": 0.6, "Root Width": 0.0012,
                            "Tip Width": 0.0008, "Clumping": 0.1, "Direction Random": 0.2,
                            "Curl Radius": 0.0008, "Curl Turns": 8.0, "Frizz": 0.4, "Frizz Waves": 1.3,
-                           "Droop": 0.05, "Resolution": 40},
+                           "Droop": 0.05, "Resolution": 40, "Bridges": 0.3, "Bridge Gap": 0.2,
+                           "Bridge Sag": 0.03},
     },
     "DENIM": {
         "Unravel Tears": {"Edge Noise": 0.6, "Noise Scale": 40.0, "Edge Smoothing": 8, "Thickness": 0.0012,
@@ -65,11 +70,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 1500.0, "Length": 0.008, "Length Random": 0.8, "Root Width": 0.0005,
                          "Tip Width": 0.0003, "Clumping": 0.6, "Direction Random": 0.45,
                          "Curl Radius": 0.0003, "Curl Turns": 4.0, "Frizz": 0.55, "Frizz Waves": 1.5,
-                         "Droop": 0.1, "Resolution": 10},
+                         "Droop": 0.1, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.05,
+                         "Bridge Sag": 0.03},
         "Unravel Strays": {"Density": 350.0, "Length": 0.06, "Length Random": 0.5, "Root Width": 0.0005,
                            "Tip Width": 0.0004, "Clumping": 0.25, "Direction Random": 0.22,
                            "Curl Radius": 0.0004, "Curl Turns": 10.0, "Frizz": 0.4, "Frizz Waves": 1.5,
-                           "Droop": 0.08, "Resolution": 40},
+                           "Droop": 0.08, "Resolution": 40, "Bridges": 0.6, "Bridge Gap": 0.05,
+                           "Bridge Sag": 0.03},
     },
     "TWEED": {
         "Unravel Tears": {"Edge Noise": 0.65, "Noise Scale": 35.0, "Edge Smoothing": 5, "Thickness": 0.003,
@@ -77,11 +84,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 1400.0, "Length": 0.012, "Length Random": 0.85, "Root Width": 0.0007,
                          "Tip Width": 0.00025, "Clumping": 0.3, "Direction Random": 0.65,
                          "Curl Radius": 0.0003, "Curl Turns": 4.0, "Frizz": 0.7, "Frizz Waves": 2.5,
-                         "Droop": 0.15, "Resolution": 14},
+                         "Droop": 0.15, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.03,
+                         "Bridge Sag": 0.08},
         "Unravel Strays": {"Density": 200.0, "Length": 0.03, "Length Random": 0.7, "Root Width": 0.0006,
                            "Tip Width": 0.00025, "Clumping": 0.1, "Direction Random": 0.65,
                            "Curl Radius": 0.0004, "Curl Turns": 5.0, "Frizz": 0.75, "Frizz Waves": 2.5,
-                           "Droop": 0.2, "Resolution": 28},
+                           "Droop": 0.2, "Resolution": 28, "Bridges": 0.15, "Bridge Gap": 0.03,
+                           "Bridge Sag": 0.08},
     },
     "LINEN": {
         "Unravel Tears": {"Edge Noise": 0.55, "Noise Scale": 45.0, "Edge Smoothing": 8, "Thickness": 0.0008,
@@ -89,11 +98,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 1800.0, "Length": 0.009, "Length Random": 0.8, "Root Width": 0.0004,
                          "Tip Width": 0.0002, "Clumping": 0.4, "Direction Random": 0.4,
                          "Curl Radius": 0.0003, "Curl Turns": 5.0, "Frizz": 0.45, "Frizz Waves": 2.0,
-                         "Droop": 0.25, "Resolution": 10},
+                         "Droop": 0.25, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.04,
+                         "Bridge Sag": 0.06},
         "Unravel Strays": {"Density": 220.0, "Length": 0.045, "Length Random": 0.7, "Root Width": 0.00035,
                            "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.4,
                            "Curl Radius": 0.0004, "Curl Turns": 8.0, "Frizz": 0.55, "Frizz Waves": 2.0,
-                           "Droop": 0.2, "Resolution": 32},
+                           "Droop": 0.2, "Resolution": 32, "Bridges": 0.25, "Bridge Gap": 0.04,
+                           "Bridge Sag": 0.06},
     },
     "COTTON": {
         "Unravel Tears": {"Edge Noise": 0.5, "Noise Scale": 50.0, "Edge Smoothing": 8, "Thickness": 0.0005,
@@ -101,11 +112,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 2200.0, "Length": 0.006, "Length Random": 0.8, "Root Width": 0.0003,
                          "Tip Width": 0.00015, "Clumping": 0.3, "Direction Random": 0.55,
                          "Curl Radius": 0.0002, "Curl Turns": 4.0, "Frizz": 0.65, "Frizz Waves": 2.5,
-                         "Droop": 0.25, "Resolution": 10},
+                         "Droop": 0.25, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.03,
+                         "Bridge Sag": 0.08},
         "Unravel Strays": {"Density": 260.0, "Length": 0.025, "Length Random": 0.7, "Root Width": 0.00025,
                            "Tip Width": 0.00015, "Clumping": 0.1, "Direction Random": 0.55,
                            "Curl Radius": 0.0003, "Curl Turns": 6.0, "Frizz": 0.75, "Frizz Waves": 2.5,
-                           "Droop": 0.3, "Resolution": 24},
+                           "Droop": 0.3, "Resolution": 24, "Bridges": 0.2, "Bridge Gap": 0.03,
+                           "Bridge Sag": 0.08},
     },
     "SILK": {
         "Unravel Tears": {"Edge Noise": 0.35, "Noise Scale": 40.0, "Edge Smoothing": 12, "Thickness": 0.0003,
@@ -113,11 +126,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 2600.0, "Length": 0.012, "Length Random": 0.7, "Root Width": 0.0002,
                          "Tip Width": 0.00012, "Clumping": 0.5, "Direction Random": 0.2,
                          "Curl Radius": 0.0001, "Curl Turns": 2.0, "Frizz": 0.12, "Frizz Waves": 1.0,
-                         "Droop": 0.5, "Resolution": 14},
+                         "Droop": 0.5, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.05,
+                         "Bridge Sag": 0.12},
         "Unravel Strays": {"Density": 260.0, "Length": 0.035, "Length Random": 0.6, "Root Width": 0.00018,
                            "Tip Width": 0.00012, "Clumping": 0.15, "Direction Random": 0.3,
                            "Curl Radius": 0.0002, "Curl Turns": 2.0, "Frizz": 0.22, "Frizz Waves": 1.2,
-                           "Droop": 0.4, "Resolution": 40},
+                           "Droop": 0.4, "Resolution": 40, "Bridges": 0.3, "Bridge Gap": 0.05,
+                           "Bridge Sag": 0.12},
     },
     "GAUZE": {
         "Unravel Tears": {"Edge Noise": 0.75, "Noise Scale": 30.0, "Edge Smoothing": 6, "Thickness": 0.0004,
@@ -125,11 +140,13 @@ PRESETS = {
         "Unravel Fray": {"Density": 700.0, "Length": 0.012, "Length Random": 0.8, "Root Width": 0.00035,
                          "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.45,
                          "Curl Radius": 0.0003, "Curl Turns": 4.0, "Frizz": 0.4, "Frizz Waves": 1.5,
-                         "Droop": 0.35, "Resolution": 14},
+                         "Droop": 0.35, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.04,
+                         "Bridge Sag": 0.1},
         "Unravel Strays": {"Density": 200.0, "Length": 0.05, "Length Random": 0.7, "Root Width": 0.0003,
                            "Tip Width": 0.0002, "Clumping": 0.0, "Direction Random": 0.45,
                            "Curl Radius": 0.0004, "Curl Turns": 6.0, "Frizz": 0.45, "Frizz Waves": 1.5,
-                           "Droop": 0.3, "Resolution": 32},
+                           "Droop": 0.3, "Resolution": 32, "Bridges": 0.3, "Bridge Gap": 0.04,
+                           "Bridge Sag": 0.1},
     },
 }
 
@@ -502,6 +519,8 @@ class ThreadsPanel:
         draw_inputs(layout, modifier, THREAD_SHAPE_INPUTS)
         layout.separator()
         draw_inputs(layout, modifier, THREAD_STYLE_INPUTS)
+        layout.separator()
+        draw_inputs(layout, modifier, BRIDGE_INPUTS)
         layout.separator()
         draw_inputs(layout, modifier, CONTACT_INPUTS)
 
