@@ -1,6 +1,6 @@
 import bpy
 import os
-
+import random
 
 ASSET_FILE = os.path.join(os.path.dirname(__file__), "assets", "unravel_nodes.blend")
 GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand")
@@ -31,6 +31,58 @@ STRAY_VALUES = {
 }
 
 
+PRESETS = {
+    "BURLAP": {
+        "Unravel Tears": {"Edge Noise": 0.4, "Noise Scale": 15.0, "Thickness": 0.006, "Lip Width": 0.05},
+        "Unravel Fray": {"Density": 250.0, "Length": 0.035, "Root Width": 0.0015, "Tip Width": 0.0006,
+                         "Clumping": 0.4, "Curl Radius": 0.001, "Frizz": 0.4, "Droop": 0.3},
+        "Unravel Strays": {"Density": 30.0, "Length": 0.08, "Root Width": 0.0012, "Frizz": 0.7, "Droop": 0.6},
+    },
+    "CANVAS": {
+        "Unravel Tears": {"Edge Noise": 0.25, "Noise Scale": 25.0, "Thickness": 0.003, "Lip Width": 0.03},
+        "Unravel Fray": {"Density": 500.0, "Length": 0.015, "Root Width": 0.0008, "Tip Width": 0.0004,
+                         "Clumping": 0.2, "Curl Radius": 0.0005, "Frizz": 0.2, "Droop": 0.1},
+        "Unravel Strays": {"Density": 20.0, "Length": 0.04, "Root Width": 0.0006, "Frizz": 0.4, "Droop": 0.3},
+    },
+    "LINEN": {
+        "Unravel Tears": {"Edge Noise": 0.3, "Noise Scale": 30.0, "Thickness": 0.0015, "Lip Width": 0.02},
+        "Unravel Fray": {"Density": 800.0, "Length": 0.012, "Root Width": 0.0004, "Tip Width": 0.0002,
+                         "Clumping": 0.3, "Curl Radius": 0.0008, "Frizz": 0.5, "Droop": 0.5},
+        "Unravel Strays": {"Density": 60.0, "Length": 0.05, "Root Width": 0.0003, "Frizz": 0.8, "Droop": 0.8},
+    },
+    "DENIM": {
+        "Unravel Tears": {"Edge Noise": 0.35, "Noise Scale": 20.0, "Thickness": 0.0012, "Lip Width": 0.02},
+        "Unravel Fray": {"Density": 600.0, "Length": 0.02, "Root Width": 0.0005, "Tip Width": 0.0002,
+                         "Clumping": 0.4, "Curl Radius": 0.0006, "Frizz": 0.35, "Droop": 0.25},
+        "Unravel Strays": {"Density": 40.0, "Length": 0.05, "Root Width": 0.0004, "Frizz": 0.6, "Droop": 0.5},
+    },
+    "TWEED": {
+        "Unravel Tears": {"Edge Noise": 0.45, "Noise Scale": 18.0, "Thickness": 0.003, "Lip Width": 0.04},
+        "Unravel Fray": {"Density": 350.0, "Length": 0.025, "Root Width": 0.0012, "Tip Width": 0.0005,
+                         "Clumping": 0.3, "Curl Radius": 0.0015, "Frizz": 0.8, "Droop": 0.3},
+        "Unravel Strays": {"Density": 45.0, "Length": 0.05, "Root Width": 0.001, "Frizz": 0.9, "Droop": 0.5},
+    },
+    "COTTON": {
+        "Unravel Tears": {"Edge Noise": 0.3, "Noise Scale": 35.0, "Thickness": 0.0006, "Lip Width": 0.012},
+        "Unravel Fray": {"Density": 900.0, "Length": 0.008, "Root Width": 0.0003, "Tip Width": 0.00015,
+                         "Clumping": 0.25, "Curl Radius": 0.0004, "Frizz": 0.45, "Droop": 0.35},
+        "Unravel Strays": {"Density": 50.0, "Length": 0.03, "Root Width": 0.00025, "Frizz": 0.7, "Droop": 0.6},
+    },
+    "SILK": {
+        "Unravel Tears": {"Edge Noise": 0.2, "Noise Scale": 40.0, "Thickness": 0.0003, "Lip Width": 0.008},
+        "Unravel Fray": {"Density": 1200.0, "Length": 0.015, "Root Width": 0.0002, "Tip Width": 0.0001,
+                         "Clumping": 0.6, "Curl Radius": 0.0002, "Frizz": 0.1, "Droop": 0.7},
+        "Unravel Strays": {"Density": 70.0, "Length": 0.06, "Root Width": 0.00015, "Frizz": 0.2, "Droop": 0.9},
+    },
+    "GAUZE": {
+        "Unravel Tears": {"Edge Noise": 0.5, "Noise Scale": 25.0, "Thickness": 0.0004, "Lip Width": 0.01},
+        "Unravel Fray": {"Density": 200.0, "Length": 0.02, "Root Width": 0.0003, "Tip Width": 0.0002,
+                         "Clumping": 0.1, "Curl Radius": 0.0005, "Frizz": 0.3, "Droop": 0.6},
+        "Unravel Strays": {"Density": 30.0, "Length": 0.06, "Root Width": 0.0002, "Frizz": 0.5, "Droop": 0.8},
+    },
+}
+
+
 def load_node_groups():
     missing = [name for name in GROUP_NAMES if name not in bpy.data.node_groups]
     if not missing:
@@ -50,6 +102,7 @@ def set_input(modifier, name, value):
     socket = find_input(modifier, name)
     if socket is not None:
         socket.value = value
+        modifier.id_data.update_tag()
 
 
 def get_cloth(obj):
@@ -75,7 +128,13 @@ def draw_inputs(layout, modifier, names):
     col.use_property_decorate = False
     for name in names:
         socket = find_input(modifier, name)
-        if socket is not None:
+        if socket is None:
+            continue
+        if name == "Seed":
+            row = col.row(align=True)
+            row.prop(socket, "value", text=name)
+            row.operator(UNRAVEL_OT_randomize_seed.bl_idname, text="", icon='FILE_REFRESH').modifier_name = modifier.name
+        else:
             col.prop(socket, "value", text=name)
 
 
@@ -88,12 +147,12 @@ class UNRAVEL_OT_make(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj is not None and obj.type == 'MESH'
+        return obj is not None and obj.type == 'MESH' and "Unravel Tears" not in obj.modifiers
 
     def execute(self, context):
         cloth = context.active_object
-        if "Unravel Tears" in cloth.modifiers:
-            self.report({'INFO'}, cloth.name + " already uses Unravel")
+        if not cloth.data.polygons:
+            self.report({'ERROR'}, cloth.name + " needs faces to tear")
             return {'CANCELLED'}
 
         load_node_groups()
@@ -150,6 +209,64 @@ class UNRAVEL_OT_paint_tears(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
         return {'FINISHED'}
 
+class UNRAVEL_OT_randomize_seed(bpy.types.Operator):
+    bl_idname = "unravel.randomize_seed"
+    bl_label = "Randomize Seed"
+    bl_description = "Pick a new random seed"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    modifier_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        if cloth is None:
+            return {'CANCELLED'}
+        modifier = cloth.modifiers.get(self.modifier_name)
+        if modifier is None:
+            threads = get_threads(cloth)
+            modifier = threads.modifiers.get(self.modifier_name) if threads else None
+        if modifier is None:
+            return {'CANCELLED'}
+        set_input(modifier, "Seed", random.randint(0, 9999))
+        return {'FINISHED'}
+
+class UNRAVEL_OT_apply_preset(bpy.types.Operator):
+    bl_idname = "unravel.apply_preset"
+    bl_label = "Apply Preset"
+    bl_description = "Set the tears and threads to look like a type of cloth"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    preset: bpy.props.EnumProperty(
+        name="Preset",
+        items=(
+            ('BURLAP', "Burlap", "Coarse, loose weave with thick hairy threads"),
+            ('CANVAS', "Canvas", "Tight, stiff weave with short neat threads"),
+            ('DENIM', "Denim", "Sturdy twill with short, bunched threads"),
+            ('TWEED', "Tweed", "Thick wool with fuzzy, frizzy threads"),
+            ('LINEN', "Linen", "Fine, soft weave with thin wispy threads"),
+            ('COTTON', "Cotton", "Light shirting with short fine threads"),
+            ('SILK', "Silk", "Very fine and smooth, with long slippery threads"),
+            ('GAUZE', "Gauze", "Thin open weave with sparse loose threads"),
+        ),
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return get_cloth(context.active_object) is not None
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        threads = get_threads(cloth)
+        for modifier_name, values in PRESETS[self.preset].items():
+            modifier = cloth.modifiers.get(modifier_name)
+            if modifier is None and threads is not None:
+                modifier = threads.modifiers.get(modifier_name)
+            if modifier is None:
+                continue
+            for name, value in values.items():
+                set_input(modifier, name, value)
+        return {'FINISHED'}
+
 
 class UNRAVEL_PT_main(bpy.types.Panel):
     bl_label = "Unravel"
@@ -165,7 +282,9 @@ class UNRAVEL_PT_main(bpy.types.Panel):
             layout.label(text="Select a cloth object", icon='INFO')
             layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
             return
-        layout.label(text=cloth.name, icon='MOD_CLOTH')
+        row = layout.row()
+        row.label(text=cloth.name, icon='MOD_CLOTH')
+        row.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
         if not cloth.data.uv_layers:
             box = layout.box()
             box.label(text="This cloth has no UVs", icon='ERROR')
@@ -225,6 +344,8 @@ class ThreadsPanel:
         layout = self.layout
         modifier = self.get_modifier(context)
         layout.enabled = modifier.show_viewport
+        draw_inputs(layout, modifier, ("Viewport Density",))
+        layout.separator()
         draw_inputs(layout, modifier, THREAD_SHAPE_INPUTS)
         layout.separator()
         draw_inputs(layout, modifier, THREAD_STYLE_INPUTS)
@@ -274,12 +395,16 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
 
 
 def draw_object_menu(self, context):
+    if not UNRAVEL_OT_make.poll(context):
+        return
     self.layout.separator()
     self.layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
 
 classes = (
     UNRAVEL_OT_make,
     UNRAVEL_OT_paint_tears,
+    UNRAVEL_OT_randomize_seed,
+    UNRAVEL_OT_apply_preset,
     UNRAVEL_PT_main,
     UNRAVEL_PT_tears,
     UNRAVEL_PT_fray,
