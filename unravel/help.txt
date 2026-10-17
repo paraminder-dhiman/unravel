@@ -11,6 +11,11 @@ QUICK START
 
 
 THE UNRAVEL TAB (press N in the viewport)
+Scale
+  Unravel expects real-world size (1 unit = 1 metre) and sets Scale from
+  the scene's Unit Scale. If the cloth is 10 times too big, set Scale
+  to 10. Raise it on a correctly sized cloth for chunkier threads.
+  
 Tears
   Hole Size ........ how far holes eat into the painted area (0 = no holes)
   Edge Noise ....... how ragged the edges are

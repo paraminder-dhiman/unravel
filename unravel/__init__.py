@@ -235,6 +235,20 @@ def update_cloth_colour(self, context):
     apply_thread_material(self)
 
 
+def apply_scale(cloth):
+    modifiers = list(cloth.modifiers)
+    threads = get_threads(cloth)
+    if threads is not None:
+        modifiers += list(threads.modifiers)
+    for modifier in modifiers:
+        if modifier.type == 'NODES' and modifier.node_group and modifier.node_group.name in GROUP_NAMES:
+            set_input(modifier, "Scale", cloth.unravel_scale)
+
+
+def update_scale(self, context):
+    apply_scale(self)
+
+
 def draw_inputs(layout, modifier, names):
     col = layout.column()
     col.use_property_split = True
@@ -298,6 +312,9 @@ class UNRAVEL_OT_make(bpy.types.Operator):
 
         apply_thread_material(cloth)
 
+        cloth.unravel_scale = 1.0 / (context.scene.unit_settings.scale_length or 1.0)
+        apply_scale(cloth)
+
         self.report({'INFO'}, "Unravel is ready. Paint the Tears vertex group to cut holes")
         return {'FINISHED'}
 
@@ -350,6 +367,7 @@ class UNRAVEL_OT_add_strand(bpy.types.Operator):
         strand = threads.modifiers.new("Unravel Strand", 'NODES')
         strand.node_group = bpy.data.node_groups["Unravel Strand"]
         set_input(strand, "Path", path)
+        set_input(strand, "Scale", cloth.unravel_scale)
         apply_thread_material(cloth)
 
         for obj in context.selected_objects:
@@ -455,6 +473,7 @@ class UNRAVEL_PT_main(bpy.types.Panel):
         row.label(text=cloth.name, icon='MOD_CLOTH')
         row.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
         row.operator(UNRAVEL_OT_help.bl_idname, text="", icon='HELP')
+        layout.prop(cloth, "unravel_scale")
         if not cloth.data.uv_layers:
             box = layout.box()
             box.label(text="This cloth has no UVs", icon='ERROR')
@@ -654,6 +673,16 @@ def register():
         default=True,
         update=update_cloth_colour,
     )
+    bpy.types.Object.unravel_scale = bpy.props.FloatProperty(
+        name="Scale",
+        description="Size of the cloth compared to real life. Use 10 if the cloth is 10 times too big. Higher also gives chunkier threads",
+        default=1.0,
+        min=0.001,
+        max=1000.0,
+        soft_min=0.01,
+        soft_max=100.0,
+        update=update_scale,
+    )
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_object_menu)
     bpy.types.VIEW3D_MT_object.append(draw_object_submenu)
     bpy.types.VIEW3D_MT_add.append(draw_add_menu)
@@ -663,6 +692,7 @@ def unregister():
     bpy.types.VIEW3D_MT_add.remove(draw_add_menu)
     bpy.types.VIEW3D_MT_object.remove(draw_object_submenu)
     del bpy.types.Object.unravel_cloth_colour
+    del bpy.types.Object.unravel_scale
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_object_menu)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

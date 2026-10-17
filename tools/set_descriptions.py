@@ -12,6 +12,7 @@ DESCRIPTIONS = {
         "Lip Width": "How far the thick edge reaches from the hole before fading back to thin cloth",
         "Whole Cloth": "Make the entire cloth solid instead of only thickening around the holes",
         "Edge Smoothing": "Smooths the stepped outline of each hole. 0 keeps the raw edge",
+        "Scale": "Size of the cloth compared to real life. Set from the Unravel tab",
     },
     "Unravel Threads": {
         "Cloth": "The torn cloth these threads grow from",
@@ -38,6 +39,7 @@ DESCRIPTIONS = {
         "Bridges": "Share of threads that stay connected across narrow gaps. 0 means none",
         "Bridge Gap": "Widest gap a thread can bridge. Narrower gaps get more bridges",
         "Bridge Sag": "How much bridging threads sag in the middle",
+        "Scale": "Size of the cloth compared to real life. Set from the Unravel tab",
     },
     
     "Unravel Strand": {
@@ -54,6 +56,7 @@ DESCRIPTIONS = {
         "Point Spacing": "Distance between points along the strand. Smaller is smoother but heavier",
         "Seed": "Changes the random look of the strand",
         "Material": "Material used by this strand",
+        "Scale": "Size of the cloth compared to real life. Set from the Unravel tab",
     },
 }
 
