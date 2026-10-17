@@ -235,6 +235,10 @@ def update_cloth_colour(self, context):
     apply_thread_material(self)
 
 
+def is_baked(cloth):
+    return cloth.get("unravel_original_mesh") is not None
+
+
 def apply_scale(cloth):
     modifiers = list(cloth.modifiers)
     threads = get_threads(cloth)
@@ -327,7 +331,8 @@ class UNRAVEL_OT_paint_tears(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_cloth(context.active_object) is not None
+        cloth = get_cloth(context.active_object)
+        return cloth is not None and not is_baked(cloth)
 
     def execute(self, context):
         cloth = get_cloth(context.active_object)
@@ -368,6 +373,7 @@ class UNRAVEL_OT_add_strand(bpy.types.Operator):
         strand.node_group = bpy.data.node_groups["Unravel Strand"]
         set_input(strand, "Path", path)
         set_input(strand, "Scale", cloth.unravel_scale)
+        set_input(strand, "Cloth", cloth)
         apply_thread_material(cloth)
 
         for obj in context.selected_objects:
@@ -415,6 +421,70 @@ class UNRAVEL_OT_remove_strand(bpy.types.Operator):
         cloth.select_set(True)
         context.view_layer.objects.active = cloth
         self.report({'INFO'}, "Removed " + self.modifier_name)
+        return {'FINISHED'}
+
+
+class UNRAVEL_OT_bake_tears(bpy.types.Operator):
+    bl_idname = "unravel.bake_tears"
+    bl_label = "Bake Tears"
+    bl_description = "Cut the holes into the mesh so simulations and rigs move the torn cloth. Unbake to edit again"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'OBJECT' and cloth is not None and not is_baked(cloth)
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        tears = cloth.modifiers["Unravel Tears"]
+        thickness = find_input(tears, "Thickness").value
+        set_input(tears, "Thickness", 0.0)
+        others = [m for m in cloth.modifiers if m != tears and m.show_viewport]
+        for modifier in others:
+            modifier.show_viewport = False
+        depsgraph = context.evaluated_depsgraph_get()
+        torn = bpy.data.meshes.new_from_object(cloth.evaluated_get(depsgraph), preserve_all_data_layers=True, depsgraph=depsgraph)
+        for modifier in others:
+            modifier.show_viewport = True
+        set_input(tears, "Thickness", thickness)
+        if "rest_position" in torn.attributes:
+            torn.attributes.remove(torn.attributes["rest_position"])
+        original = cloth.data
+        original.use_fake_user = True
+        torn.name = original.name + " Torn"
+        cloth.data = torn
+        cloth["unravel_original_mesh"] = original
+        set_input(tears, "Holes Baked", True)
+        cloth.modifiers.move(cloth.modifiers.find(tears.name), len(cloth.modifiers) - 1)
+        cloth.add_rest_position_attribute = True
+        self.report({'INFO'}, "Tears baked. Simulate or animate the cloth now")
+        return {'FINISHED'}
+
+
+class UNRAVEL_OT_unbake_tears(bpy.types.Operator):
+    bl_idname = "unravel.unbake_tears"
+    bl_label = "Unbake Tears"
+    bl_description = "Bring back the live tears so you can paint and tweak them again"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'OBJECT' and cloth is not None and is_baked(cloth)
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        original = cloth["unravel_original_mesh"]
+        torn = cloth.data
+        cloth.data = original
+        original.use_fake_user = False
+        del cloth["unravel_original_mesh"]
+        if torn.users == 0:
+            bpy.data.meshes.remove(torn)
+        set_input(cloth.modifiers["Unravel Tears"], "Holes Baked", False)
+        cloth.add_rest_position_attribute = False
+        self.report({'INFO'}, "Tears are live again. Bake again before simulating")
         return {'FINISHED'}
 
 
@@ -533,11 +603,20 @@ class UNRAVEL_PT_tears(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        tears = get_cloth(context.active_object).modifiers["Unravel Tears"]
+        cloth = get_cloth(context.active_object)
+        tears = cloth.modifiers["Unravel Tears"]
+        if is_baked(cloth):
+            layout.label(text="Holes are baked into the mesh", icon='CHECKMARK')
+            draw_inputs(layout, tears, THICKNESS_INPUTS)
+            layout.separator()
+            layout.operator(UNRAVEL_OT_unbake_tears.bl_idname, icon='LOOP_BACK')
+            return
         layout.operator(UNRAVEL_OT_paint_tears.bl_idname, icon='BRUSH_DATA')
         draw_inputs(layout, tears, TEAR_INPUTS)
         layout.separator()
         draw_inputs(layout, tears, THICKNESS_INPUTS)
+        layout.separator()
+        layout.operator(UNRAVEL_OT_bake_tears.bl_idname, icon='MOD_CLOTH')
 
 
 class ThreadsPanel:
@@ -662,6 +741,8 @@ class UNRAVEL_MT_object(bpy.types.Menu):
         layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
         layout.operator(UNRAVEL_OT_paint_tears.bl_idname, icon='BRUSH_DATA')
         layout.operator(UNRAVEL_OT_add_strand.bl_idname, text="Add Strand", icon='CURVE_BEZCURVE')
+        layout.operator(UNRAVEL_OT_bake_tears.bl_idname, icon='MOD_CLOTH')
+        layout.operator(UNRAVEL_OT_unbake_tears.bl_idname, icon='LOOP_BACK')
         layout.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
         layout.separator()
         layout.operator(UNRAVEL_OT_help.bl_idname, icon='HELP')
@@ -687,6 +768,8 @@ classes = (
     UNRAVEL_OT_paint_tears,
     UNRAVEL_OT_add_strand,
     UNRAVEL_OT_remove_strand,
+    UNRAVEL_OT_bake_tears,
+    UNRAVEL_OT_unbake_tears,
     UNRAVEL_OT_help,
     UNRAVEL_OT_randomize_seed,
     UNRAVEL_OT_apply_preset,

@@ -13,6 +13,7 @@ DESCRIPTIONS = {
         "Whole Cloth": "Make the entire cloth solid instead of only thickening around the holes",
         "Edge Smoothing": "Smooths the stepped outline of each hole. 0 keeps the raw edge",
         "Scale": "Size of the cloth compared to real life. Set from the Unravel tab",
+        "Holes Baked": "Set by Bake Tears. On means the holes are already in the mesh and only the thickness is added",
     },
     "Unravel Threads": {
         "Cloth": "The torn cloth these threads grow from",
@@ -57,6 +58,7 @@ DESCRIPTIONS = {
         "Seed": "Changes the random look of the strand",
         "Material": "Material used by this strand",
         "Scale": "Size of the cloth compared to real life. Set from the Unravel tab",
+        "Cloth": "The cloth this strand lies on. The strand follows it when it moves or simulates",
     },
 }
 

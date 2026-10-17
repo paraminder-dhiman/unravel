@@ -20,6 +20,7 @@ Tears
   Hole Size ........ how far holes eat into the painted area (0 = no holes)
   Edge Noise ....... how ragged the edges are
   Noise Scale ...... size of the ragged bits
+  Edge Smoothing ... smooths the stepped outline of each hole
   Detail ........... extra subdivision for finer edges (heavier)
   Thickness ........ how thick the torn edges look
   Lip Width ........ how far the thickness reaches from each hole
@@ -40,6 +41,15 @@ Thread Material
 Strands
   Hand-drawn loose threads. Use Add Strand (or Shift+A > Unravel Strand),
   draw on the cloth, then press Tab when done.
+
+
+ANIMATION AND SIMULATION
+  Before you simulate or rig the cloth, click Bake Tears (bottom of the
+  Tears panel). This cuts the holes into the mesh, so the simulation sees
+  them and the cloth flaps around its tears. Thickness, threads and
+  strands stay live and follow the cloth. Unbake Tears brings the live
+  tears back so you can paint and tweak them again; bake again afterwards.
+  Draw strands while the cloth is in its resting shape (frame 1).
 
 
 TIPS
