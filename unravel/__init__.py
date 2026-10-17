@@ -384,6 +384,40 @@ class UNRAVEL_OT_add_strand(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class UNRAVEL_OT_remove_strand(bpy.types.Operator):
+    bl_idname = "unravel.remove_strand"
+    bl_label = "Remove Strand"
+    bl_description = "Delete this strand and the curve it was drawn with"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    modifier_name: bpy.props.StringProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' and get_cloth(context.active_object) is not None
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        threads = get_threads(cloth)
+        modifier = threads.modifiers.get(self.modifier_name) if threads else None
+        if modifier is None:
+            return {'CANCELLED'}
+        path = find_input(modifier, "Path").value
+        threads.modifiers.remove(modifier)
+        sync_material_slots(threads)
+        paths_in_use = [find_input(m, "Path").value for m in threads.modifiers
+                        if m.type == 'NODES' and m.node_group and m.node_group.name == "Unravel Strand"]
+        if path is not None and path not in paths_in_use:
+            curve = path.data
+            bpy.data.objects.remove(path)
+            if curve.users == 0:
+                bpy.data.curves.remove(curve)
+        cloth.select_set(True)
+        context.view_layer.objects.active = cloth
+        self.report({'INFO'}, "Removed " + self.modifier_name)
+        return {'FINISHED'}
+
+
 class UNRAVEL_OT_help(bpy.types.Operator):
     bl_idname = "unravel.help"
     bl_label = "Unravel Help"
@@ -613,6 +647,7 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
             row = box.row()
             row.prop(modifier, "show_viewport", text="")
             row.label(text=modifier.name)
+            row.operator(UNRAVEL_OT_remove_strand.bl_idname, text="", icon='X', emboss=False).modifier_name = modifier.name
             col = box.column()
             col.enabled = modifier.show_viewport
             draw_inputs(col, modifier, STRAND_INPUTS)
@@ -651,6 +686,7 @@ classes = (
     UNRAVEL_OT_make,
     UNRAVEL_OT_paint_tears,
     UNRAVEL_OT_add_strand,
+    UNRAVEL_OT_remove_strand,
     UNRAVEL_OT_help,
     UNRAVEL_OT_randomize_seed,
     UNRAVEL_OT_apply_preset,
