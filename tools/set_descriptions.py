@@ -60,6 +60,12 @@ DESCRIPTIONS = {
         "Scale": "Size of the cloth compared to real life. Set from the Unravel tab",
         "Cloth": "The cloth this strand lies on. The strand follows it when it moves or simulates",
     },
+        "Unravel Thread Mesh": {
+        "Threads": "The threads object to turn into mesh tubes",
+        "Sides": "Sides around each thread tube. 3 is lightest",
+        "Detail": "Share of points kept along each thread. Lower is lighter",
+        "UV Map": "UV map name to store on the tubes, so the cloth colour carries over",
+    },
 }
 
 for group_name, descriptions in DESCRIPTIONS.items():

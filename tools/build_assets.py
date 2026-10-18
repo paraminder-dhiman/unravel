@@ -1,7 +1,7 @@
 import bpy
 import os
 
-GROUPS = ("Unravel Tears", "Unravel Threads", "Unravel Strand")
+GROUPS = ("Unravel Tears", "Unravel Threads", "Unravel Strand", "Unravel Thread Mesh")
 
 here = os.path.dirname(os.path.abspath(__file__))
 target = os.path.normpath(os.path.join(here, "..", "unravel", "assets", "unravel_nodes.blend"))

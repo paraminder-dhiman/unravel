@@ -52,6 +52,17 @@ ANIMATION AND SIMULATION
   Draw strands while the cloth is in its resting shape (frame 1).
 
 
+EXPORT (Apply Unravel, bottom of the main panel)
+  Turns the cloth and threads into plain objects at the current frame.
+  Threads as Mesh: thin tubes for FBX, glTF and game engines. Sides and
+    Detail set the weight; the face count is shown after applying.
+  Threads as Hair: hair curves for Blender, Alembic and USD.
+  Rigged cloth: tick Skin Threads to Rig so the threads bend with it.
+  Restore Unravel brings the live setup back from a hidden backup.
+  Animated cloth: no need to apply. Export the live scene to Alembic;
+    the cloth and threads animate.
+
+
 TIPS
   · Every Seed has a refresh button for a quick new variation.
   · Presets only change the look. Your paint is never touched.

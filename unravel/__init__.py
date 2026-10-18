@@ -4,7 +4,8 @@ import random
 
 ASSET_FILE = os.path.join(os.path.dirname(__file__), "assets", "unravel_nodes.blend")
 HELP_FILE = os.path.join(os.path.dirname(__file__), "Help.txt")
-GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand")
+GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand", "Unravel Thread Mesh")
+BACKUP_COLLECTION = "Unravel Backup"
 
 
 TEAR_INPUTS = ("Hole Size", "Edge Noise", "Noise Scale", "Edge Smoothing", "Detail", "Seed")
@@ -38,115 +39,110 @@ STRAY_VALUES = {
 PRESETS = {
     "BURLAP": {
         "Unravel Tears": {"Edge Noise": 0.7, "Noise Scale": 9.0, "Edge Smoothing": 8, "Thickness": 0.006,
-                          "Lip Width": 0.05},
+                        "Lip Width": 0.05},
         "Unravel Fray": {"Density": 220.0, "Length": 0.035, "Length Random": 0.6, "Root Width": 0.0022,
-                         "Tip Width": 0.0012, "Clumping": 0.65, "Direction Random": 0.25,
-                         "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.3, "Frizz Waves": 1.2,
-                         "Droop": 0.25, "Resolution": 24, "Bridges": 0.0, "Bridge Gap": 0.3,
+                       "Tip Width": 0.0012, "Clumping": 0.65, "Direction Random": 0.25,
+                       "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.24, "Frizz Waves": 1.2,
+                       "Droop": 0.25, "Resolution": 24, "Bridges": 0.0, "Bridge Gap": 0.3,
+                       "Bridge Sag": 0.05},
+        "Unravel Strays": {"Density": 70, "Length": 0.1, "Length Random": 0.7, "Root Width": 0.0018,
+                         "Tip Width": 0.0012, "Clumping": 0.15, "Direction Random": 0.12,
+                         "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.25, "Frizz Waves": 1.2,
+                         "Droop": 0.35, "Resolution": 64, "Bridges": 0.4, "Bridge Gap": 0.3,
                          "Bridge Sag": 0.05},
-        "Unravel Strays": {"Density": 80.0, "Length": 0.12, "Length Random": 0.7, "Root Width": 0.0018,
-                           "Tip Width": 0.0012, "Clumping": 0.15, "Direction Random": 0.2,
-                           "Curl Radius": 0.0008, "Curl Turns": 4.0, "Frizz": 0.45, "Frizz Waves": 1.2,
-                           "Droop": 0.05, "Resolution": 64, "Bridges": 0.6, "Bridge Gap": 0.3,
-                           "Bridge Sag": 0.05},
     },
     "CANVAS": {
         "Unravel Tears": {"Edge Noise": 0.55, "Noise Scale": 11.0, "Edge Smoothing": 10, "Thickness": 0.003,
-                          "Lip Width": 0.03},
+                        "Lip Width": 0.03},
         "Unravel Fray": {"Density": 420.0, "Length": 0.035, "Length Random": 0.7, "Root Width": 0.0012,
-                         "Tip Width": 0.0007, "Clumping": 0.45, "Direction Random": 0.3,
-                         "Curl Radius": 0.0006, "Curl Turns": 4.0, "Frizz": 0.3, "Frizz Waves": 1.3,
-                         "Droop": 0.05, "Resolution": 12, "Bridges": 0.0, "Bridge Gap": 0.2,
+                       "Tip Width": 0.0007, "Clumping": 0.45, "Direction Random": 0.3, "Curl Radius": 0.0006,
+                       "Curl Turns": 2.5, "Frizz": 0.24, "Frizz Waves": 1.3, "Droop": 0.05, "Resolution": 12,
+                       "Bridges": 0.0, "Bridge Gap": 0.2, "Bridge Sag": 0.03},
+        "Unravel Strays": {"Density": 42, "Length": 0.07, "Length Random": 0.6, "Root Width": 0.0012,
+                         "Tip Width": 0.0008, "Clumping": 0.1, "Direction Random": 0.1,
+                         "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.2, "Frizz Waves": 1.3,
+                         "Droop": 0.4, "Resolution": 40, "Bridges": 0.2, "Bridge Gap": 0.2,
                          "Bridge Sag": 0.03},
-        "Unravel Strays": {"Density": 70.0, "Length": 0.2, "Length Random": 0.6, "Root Width": 0.0012,
-                           "Tip Width": 0.0008, "Clumping": 0.1, "Direction Random": 0.2,
-                           "Curl Radius": 0.0008, "Curl Turns": 8.0, "Frizz": 0.4, "Frizz Waves": 1.3,
-                           "Droop": 0.05, "Resolution": 40, "Bridges": 0.3, "Bridge Gap": 0.2,
-                           "Bridge Sag": 0.03},
     },
     "DENIM": {
         "Unravel Tears": {"Edge Noise": 0.6, "Noise Scale": 40.0, "Edge Smoothing": 8, "Thickness": 0.0012,
-                          "Lip Width": 0.006},
+                        "Lip Width": 0.006},
         "Unravel Fray": {"Density": 1500.0, "Length": 0.008, "Length Random": 0.8, "Root Width": 0.0005,
-                         "Tip Width": 0.0003, "Clumping": 0.6, "Direction Random": 0.45,
-                         "Curl Radius": 0.0003, "Curl Turns": 4.0, "Frizz": 0.55, "Frizz Waves": 1.5,
-                         "Droop": 0.1, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.05,
+                       "Tip Width": 0.0003, "Clumping": 0.6, "Direction Random": 0.35, "Curl Radius": 0.0003,
+                       "Curl Turns": 2.5, "Frizz": 0.44, "Frizz Waves": 1.5, "Droop": 0.1, "Resolution": 10,
+                       "Bridges": 0.0, "Bridge Gap": 0.05, "Bridge Sag": 0.03},
+        "Unravel Strays": {"Density": 170, "Length": 0.028, "Length Random": 0.5, "Root Width": 0.0005,
+                         "Tip Width": 0.0004, "Clumping": 0.25, "Direction Random": 0.12,
+                         "Curl Radius": 0.0004, "Curl Turns": 2.5, "Frizz": 0.25, "Frizz Waves": 1.5,
+                         "Droop": 0.55, "Resolution": 40, "Bridges": 0.05, "Bridge Gap": 0.05,
                          "Bridge Sag": 0.03},
-        "Unravel Strays": {"Density": 350.0, "Length": 0.06, "Length Random": 0.5, "Root Width": 0.0005,
-                           "Tip Width": 0.0004, "Clumping": 0.25, "Direction Random": 0.22,
-                           "Curl Radius": 0.0004, "Curl Turns": 10.0, "Frizz": 0.4, "Frizz Waves": 1.5,
-                           "Droop": 0.08, "Resolution": 40, "Bridges": 0.6, "Bridge Gap": 0.05,
-                           "Bridge Sag": 0.03},
     },
     "TWEED": {
         "Unravel Tears": {"Edge Noise": 0.65, "Noise Scale": 35.0, "Edge Smoothing": 5, "Thickness": 0.003,
-                          "Lip Width": 0.008},
+                        "Lip Width": 0.008},
         "Unravel Fray": {"Density": 1400.0, "Length": 0.012, "Length Random": 0.85, "Root Width": 0.0007,
-                         "Tip Width": 0.00025, "Clumping": 0.3, "Direction Random": 0.65,
-                         "Curl Radius": 0.0003, "Curl Turns": 4.0, "Frizz": 0.7, "Frizz Waves": 2.5,
-                         "Droop": 0.15, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.03,
+                       "Tip Width": 0.00025, "Clumping": 0.3, "Direction Random": 0.35,
+                       "Curl Radius": 0.0003, "Curl Turns": 2.5, "Frizz": 0.56, "Frizz Waves": 2.5,
+                       "Droop": 0.15, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.03,
+                       "Bridge Sag": 0.08},
+        "Unravel Strays": {"Density": 140, "Length": 0.025, "Length Random": 0.7, "Root Width": 0.0006,
+                         "Tip Width": 0.00025, "Clumping": 0.1, "Direction Random": 0.3,
+                         "Curl Radius": 0.0004, "Curl Turns": 3.0, "Frizz": 0.45, "Frizz Waves": 1.5,
+                         "Droop": 0.3, "Resolution": 28, "Bridges": 0.1, "Bridge Gap": 0.03,
                          "Bridge Sag": 0.08},
-        "Unravel Strays": {"Density": 200.0, "Length": 0.03, "Length Random": 0.7, "Root Width": 0.0006,
-                           "Tip Width": 0.00025, "Clumping": 0.1, "Direction Random": 0.65,
-                           "Curl Radius": 0.0004, "Curl Turns": 5.0, "Frizz": 0.75, "Frizz Waves": 2.5,
-                           "Droop": 0.2, "Resolution": 28, "Bridges": 0.15, "Bridge Gap": 0.03,
-                           "Bridge Sag": 0.08},
     },
     "LINEN": {
         "Unravel Tears": {"Edge Noise": 0.55, "Noise Scale": 45.0, "Edge Smoothing": 8, "Thickness": 0.0008,
-                          "Lip Width": 0.005},
+                        "Lip Width": 0.005},
         "Unravel Fray": {"Density": 1800.0, "Length": 0.009, "Length Random": 0.8, "Root Width": 0.0004,
-                         "Tip Width": 0.0002, "Clumping": 0.4, "Direction Random": 0.4,
-                         "Curl Radius": 0.0003, "Curl Turns": 5.0, "Frizz": 0.45, "Frizz Waves": 2.0,
-                         "Droop": 0.25, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.04,
+                       "Tip Width": 0.0002, "Clumping": 0.4, "Direction Random": 0.35, "Curl Radius": 0.0003,
+                       "Curl Turns": 2.5, "Frizz": 0.36, "Frizz Waves": 2.0, "Droop": 0.25, "Resolution": 10,
+                       "Bridges": 0.0, "Bridge Gap": 0.04, "Bridge Sag": 0.06},
+        "Unravel Strays": {"Density": 154, "Length": 0.03, "Length Random": 0.7, "Root Width": 0.00035,
+                         "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.15,
+                         "Curl Radius": 0.0004, "Curl Turns": 2.0, "Frizz": 0.3, "Frizz Waves": 1.5,
+                         "Droop": 0.35, "Resolution": 32, "Bridges": 0.15, "Bridge Gap": 0.04,
                          "Bridge Sag": 0.06},
-        "Unravel Strays": {"Density": 220.0, "Length": 0.045, "Length Random": 0.7, "Root Width": 0.00035,
-                           "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.4,
-                           "Curl Radius": 0.0004, "Curl Turns": 8.0, "Frizz": 0.55, "Frizz Waves": 2.0,
-                           "Droop": 0.2, "Resolution": 32, "Bridges": 0.25, "Bridge Gap": 0.04,
-                           "Bridge Sag": 0.06},
     },
     "COTTON": {
         "Unravel Tears": {"Edge Noise": 0.5, "Noise Scale": 50.0, "Edge Smoothing": 8, "Thickness": 0.0005,
-                          "Lip Width": 0.004},
+                        "Lip Width": 0.004},
         "Unravel Fray": {"Density": 2200.0, "Length": 0.006, "Length Random": 0.8, "Root Width": 0.0003,
-                         "Tip Width": 0.00015, "Clumping": 0.3, "Direction Random": 0.55,
-                         "Curl Radius": 0.0002, "Curl Turns": 4.0, "Frizz": 0.65, "Frizz Waves": 2.5,
-                         "Droop": 0.25, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.03,
+                       "Tip Width": 0.00015, "Clumping": 0.3, "Direction Random": 0.35,
+                       "Curl Radius": 0.0002, "Curl Turns": 2.5, "Frizz": 0.52, "Frizz Waves": 2.5,
+                       "Droop": 0.25, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.03,
+                       "Bridge Sag": 0.08},
+        "Unravel Strays": {"Density": 182, "Length": 0.02, "Length Random": 0.7, "Root Width": 0.00025,
+                         "Tip Width": 0.00015, "Clumping": 0.1, "Direction Random": 0.2,
+                         "Curl Radius": 0.0003, "Curl Turns": 2.5, "Frizz": 0.4, "Frizz Waves": 1.5,
+                         "Droop": 0.35, "Resolution": 24, "Bridges": 0.1, "Bridge Gap": 0.03,
                          "Bridge Sag": 0.08},
-        "Unravel Strays": {"Density": 260.0, "Length": 0.025, "Length Random": 0.7, "Root Width": 0.00025,
-                           "Tip Width": 0.00015, "Clumping": 0.1, "Direction Random": 0.55,
-                           "Curl Radius": 0.0003, "Curl Turns": 6.0, "Frizz": 0.75, "Frizz Waves": 2.5,
-                           "Droop": 0.3, "Resolution": 24, "Bridges": 0.2, "Bridge Gap": 0.03,
-                           "Bridge Sag": 0.08},
     },
     "SILK": {
         "Unravel Tears": {"Edge Noise": 0.35, "Noise Scale": 40.0, "Edge Smoothing": 12, "Thickness": 0.0003,
-                          "Lip Width": 0.003},
+                        "Lip Width": 0.003},
         "Unravel Fray": {"Density": 2600.0, "Length": 0.012, "Length Random": 0.7, "Root Width": 0.0002,
-                         "Tip Width": 0.00012, "Clumping": 0.5, "Direction Random": 0.2,
-                         "Curl Radius": 0.0001, "Curl Turns": 2.0, "Frizz": 0.12, "Frizz Waves": 1.0,
-                         "Droop": 0.5, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.05,
+                       "Tip Width": 0.00012, "Clumping": 0.5, "Direction Random": 0.2, "Curl Radius": 0.0001,
+                       "Curl Turns": 2.0, "Frizz": 0.096, "Frizz Waves": 1.0, "Droop": 0.5, "Resolution": 14,
+                       "Bridges": 0.0, "Bridge Gap": 0.05, "Bridge Sag": 0.12},
+        "Unravel Strays": {"Density": 182, "Length": 0.03, "Length Random": 0.6, "Root Width": 0.00018,
+                         "Tip Width": 0.00012, "Clumping": 0.15, "Direction Random": 0.12,
+                         "Curl Radius": 0.0002, "Curl Turns": 1.5, "Frizz": 0.12, "Frizz Waves": 1.2,
+                         "Droop": 0.5, "Resolution": 40, "Bridges": 0.2, "Bridge Gap": 0.05,
                          "Bridge Sag": 0.12},
-        "Unravel Strays": {"Density": 260.0, "Length": 0.035, "Length Random": 0.6, "Root Width": 0.00018,
-                           "Tip Width": 0.00012, "Clumping": 0.15, "Direction Random": 0.3,
-                           "Curl Radius": 0.0002, "Curl Turns": 2.0, "Frizz": 0.22, "Frizz Waves": 1.2,
-                           "Droop": 0.4, "Resolution": 40, "Bridges": 0.3, "Bridge Gap": 0.05,
-                           "Bridge Sag": 0.12},
     },
     "GAUZE": {
         "Unravel Tears": {"Edge Noise": 0.75, "Noise Scale": 30.0, "Edge Smoothing": 6, "Thickness": 0.0004,
-                          "Lip Width": 0.003},
+                        "Lip Width": 0.003},
         "Unravel Fray": {"Density": 700.0, "Length": 0.012, "Length Random": 0.8, "Root Width": 0.00035,
-                         "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.45,
-                         "Curl Radius": 0.0003, "Curl Turns": 4.0, "Frizz": 0.4, "Frizz Waves": 1.5,
-                         "Droop": 0.35, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.04,
+                       "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.35, "Curl Radius": 0.0003,
+                       "Curl Turns": 2.5, "Frizz": 0.32, "Frizz Waves": 1.5, "Droop": 0.35, "Resolution": 14,
+                       "Bridges": 0.0, "Bridge Gap": 0.04, "Bridge Sag": 0.1},
+        "Unravel Strays": {"Density": 140, "Length": 0.035, "Length Random": 0.7, "Root Width": 0.0003,
+                         "Tip Width": 0.0002, "Clumping": 0.0, "Direction Random": 0.2,
+                         "Curl Radius": 0.0004, "Curl Turns": 2.0, "Frizz": 0.3, "Frizz Waves": 1.5,
+                         "Droop": 0.4, "Resolution": 32, "Bridges": 0.2, "Bridge Gap": 0.04,
                          "Bridge Sag": 0.1},
-        "Unravel Strays": {"Density": 200.0, "Length": 0.05, "Length Random": 0.7, "Root Width": 0.0003,
-                           "Tip Width": 0.0002, "Clumping": 0.0, "Direction Random": 0.45,
-                           "Curl Radius": 0.0004, "Curl Turns": 6.0, "Frizz": 0.45, "Frizz Waves": 1.5,
-                           "Droop": 0.3, "Resolution": 32, "Bridges": 0.3, "Bridge Gap": 0.04,
-                           "Bridge Sag": 0.1},
     },
 }
 
@@ -237,6 +233,46 @@ def update_cloth_colour(self, context):
 
 def is_baked(cloth):
     return cloth.get("unravel_original_mesh") is not None
+
+
+def is_applied(cloth):
+    return cloth.get("unravel_applied_mesh") is not None
+
+
+def clean_attributes(data, cloth):
+    leaked = set(cloth.vertex_groups.keys()) | {"rest_position"}
+    names = [a.name for a in data.attributes if a.name.startswith("unravel_") or a.name in leaked]
+    for name in names:
+        data.attributes.remove(data.attributes[name])
+
+
+def find_layer_collection(layer, collection):
+    if layer.collection == collection:
+        return layer
+    for child in layer.children:
+        found = find_layer_collection(child, collection)
+        if found is not None:
+            return found
+    return None
+
+
+def get_backup_collection(context):
+    collection = bpy.data.collections.get(BACKUP_COLLECTION)
+    if collection is None:
+        collection = bpy.data.collections.new(BACKUP_COLLECTION)
+        context.scene.collection.children.link(collection)
+    collection.hide_render = True
+    layer = find_layer_collection(context.view_layer.layer_collection, collection)
+    if layer is not None:
+        layer.exclude = True
+    return collection
+
+
+def move_to_collections(obj, collections):
+    for collection in list(obj.users_collection):
+        collection.objects.unlink(obj)
+    for collection in collections:
+        collection.objects.link(obj)
 
 
 def apply_scale(cloth):
@@ -332,7 +368,7 @@ class UNRAVEL_OT_paint_tears(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         cloth = get_cloth(context.active_object)
-        return cloth is not None and not is_baked(cloth)
+        return cloth is not None and not is_baked(cloth) and not is_applied(cloth)
 
     def execute(self, context):
         cloth = get_cloth(context.active_object)
@@ -355,7 +391,7 @@ class UNRAVEL_OT_add_strand(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         cloth = get_cloth(context.active_object)
-        return context.mode == 'OBJECT' and cloth is not None and get_threads(cloth) is not None
+        return context.mode == 'OBJECT' and cloth is not None and not is_applied(cloth) and get_threads(cloth) is not None
 
     def execute(self, context):
         cloth = get_cloth(context.active_object)
@@ -433,7 +469,7 @@ class UNRAVEL_OT_bake_tears(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         cloth = get_cloth(context.active_object)
-        return context.mode == 'OBJECT' and cloth is not None and not is_baked(cloth)
+        return context.mode == 'OBJECT' and cloth is not None and not is_baked(cloth) and not is_applied(cloth)
 
     def execute(self, context):
         cloth = get_cloth(context.active_object)
@@ -471,7 +507,7 @@ class UNRAVEL_OT_unbake_tears(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         cloth = get_cloth(context.active_object)
-        return context.mode == 'OBJECT' and cloth is not None and is_baked(cloth)
+        return context.mode == 'OBJECT' and cloth is not None and is_baked(cloth) and not is_applied(cloth)
 
     def execute(self, context):
         cloth = get_cloth(context.active_object)
@@ -485,6 +521,195 @@ class UNRAVEL_OT_unbake_tears(bpy.types.Operator):
         set_input(cloth.modifiers["Unravel Tears"], "Holes Baked", False)
         cloth.add_rest_position_attribute = False
         self.report({'INFO'}, "Tears are live again. Bake again before simulating")
+        return {'FINISHED'}
+
+
+class UNRAVEL_OT_apply(bpy.types.Operator):
+    bl_idname = "unravel.apply"
+    bl_label = "Apply Unravel"
+    bl_description = "Turn the cloth and threads into plain objects for export. Restore Unravel brings the live setup back"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    threads_as: bpy.props.EnumProperty(
+        name="Threads as",
+        items=(
+            ('MESH', "Mesh", "Thin tubes. Exports to FBX, glTF and game engines"),
+            ('HAIR', "Hair", "Hair curves. Best for Blender renders, Alembic and USD"),
+        ),
+        default='MESH',
+    )
+    sides: bpy.props.IntProperty(name="Sides", description="Sides around each thread tube. 3 is lightest", default=3, min=3, max=8)
+    detail: bpy.props.FloatProperty(name="Detail", description="Share of points kept along each thread. Lower is lighter",
+                                    default=1.0, min=0.1, max=1.0, subtype='FACTOR')
+    skin: bpy.props.BoolProperty(name="Skin Threads to Rig", description="Give the thread mesh the cloth's bone weights so it bends with the rig",
+                                 default=True)
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'OBJECT' and cloth is not None and not is_applied(cloth)
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.prop(self, "threads_as", expand=True)
+        if self.threads_as == 'MESH':
+            layout.prop(self, "sides")
+            layout.prop(self, "detail")
+            if any(m.type == 'ARMATURE' for m in get_cloth(context.active_object).modifiers):
+                layout.prop(self, "skin")
+        layout.label(text="Uses the current frame", icon='INFO')
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        threads = get_threads(cloth)
+        armatures = [m for m in cloth.modifiers if m.type == 'ARMATURE' and m.show_viewport]
+        for modifier in armatures:
+            modifier.show_viewport = False
+        load_node_groups()
+        result = self.make_threads(context, cloth, threads) if threads is not None else None
+        depsgraph = context.evaluated_depsgraph_get()
+        applied = bpy.data.meshes.new_from_object(cloth.evaluated_get(depsgraph), preserve_all_data_layers=True, depsgraph=depsgraph)
+        clean_attributes(applied, cloth)
+        original = cloth.data
+        original.use_fake_user = True
+        applied.name = original.name + " Applied"
+        cloth.data = applied
+        cloth["unravel_applied_mesh"] = original
+        turned_off = [m.name for m in cloth.modifiers if m.show_viewport and m.type != 'ARMATURE']
+        for name in turned_off:
+            cloth.modifiers[name].show_viewport = False
+            cloth.modifiers[name].show_render = False
+        cloth["unravel_turned_off"] = turned_off
+        backup = get_backup_collection(context)
+        if threads is not None:
+            hidden = [threads] + [find_input(m, "Path").value for m in threads.modifiers
+                                  if m.type == 'NODES' and m.node_group and m.node_group.name == "Unravel Strand"]
+            for obj in hidden:
+                if obj is None:
+                    continue
+                obj["unravel_name"] = obj.name
+                move_to_collections(obj, [backup])
+                obj.name = obj["unravel_name"] + " Backup"
+            result.name = threads["unravel_name"]
+            cloth["unravel_result"] = result
+        if result is not None and result.type == 'MESH' and armatures and self.skin:
+            self.skin_to_rig(context, cloth, result, armatures)
+        for modifier in armatures:
+            modifier.show_viewport = True
+
+        message = "Applied. Cloth " + str(len(applied.polygons)) + " faces"
+        if result is not None and result.type == 'MESH':
+            message += ", threads " + str(len(result.data.polygons)) + " faces"
+        self.report({'INFO'}, message)
+        return {'FINISHED'}
+
+    def make_threads(self, context, cloth, threads):
+        if self.threads_as == 'HAIR':
+            result = threads.copy()
+            result.data = threads.data.copy()
+            for collection in cloth.users_collection:
+                collection.objects.link(result)
+            for modifier in [m.name for m in result.modifiers]:
+                with context.temp_override(object=result, active_object=result):
+                    bpy.ops.object.modifier_apply(modifier=modifier)
+            clean_attributes(result.data, cloth)
+            return result
+
+        uv_name = find_input(threads.modifiers["Unravel Fray"], "UV Map").value
+        result = bpy.data.objects.new("Thread Mesh", bpy.data.meshes.new("Thread Mesh"))
+        for collection in cloth.users_collection:
+            collection.objects.link(result)
+        result.parent = cloth
+        maker = result.modifiers.new("Unravel Thread Mesh", 'NODES')
+        maker.node_group = bpy.data.node_groups["Unravel Thread Mesh"]
+        set_input(maker, "Threads", threads)
+        set_input(maker, "Sides", self.sides)
+        set_input(maker, "Detail", self.detail)
+        set_input(maker, "UV Map", uv_name)
+
+        depsgraph = context.evaluated_depsgraph_get()
+        mesh = bpy.data.meshes.new_from_object(result.evaluated_get(depsgraph), preserve_all_data_layers=True, depsgraph=depsgraph)
+        result.modifiers.remove(maker)
+        old = result.data
+        result.data = mesh
+        bpy.data.meshes.remove(old)
+        clean_attributes(mesh, cloth)
+        if uv_name in mesh.uv_layers:
+            mesh.uv_layers.active = mesh.uv_layers[uv_name]
+        mesh.name = threads.name
+        return result
+
+    def skin_to_rig(self, context, cloth, result, armatures):
+        transfer = result.modifiers.new("Skin Weights", 'DATA_TRANSFER')
+        transfer.object = cloth
+        transfer.use_vert_data = True
+        transfer.data_types_verts = {'VGROUP_WEIGHTS'}
+        transfer.vert_mapping = 'POLYINTERP_NEAREST'
+        with context.temp_override(object=result, active_object=result, selected_objects=[result]):
+            bpy.ops.object.datalayout_transfer(modifier=transfer.name)
+            bpy.ops.object.modifier_apply(modifier=transfer.name)
+
+        mask = find_input(cloth.modifiers["Unravel Tears"], "Mask").value
+        if mask in result.vertex_groups:
+            result.vertex_groups.remove(result.vertex_groups[mask])
+        for armature in armatures:
+            rig = result.modifiers.new(armature.name, 'ARMATURE')
+            rig.object = armature.object
+        if cloth.parent is not None and cloth.parent.type == 'ARMATURE':
+            world = result.matrix_world.copy()
+            result.parent = cloth.parent
+            result.matrix_world = world
+
+
+class UNRAVEL_OT_restore(bpy.types.Operator):
+    bl_idname = "unravel.restore"
+    bl_label = "Restore Unravel"
+    bl_description = "Bring back the live tears and threads from before Apply"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'OBJECT' and cloth is not None and is_applied(cloth)
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        applied = cloth.data
+        cloth.data = cloth["unravel_applied_mesh"]
+        cloth.data.use_fake_user = False
+        if applied.users == 0:
+            bpy.data.meshes.remove(applied)
+        for name in cloth["unravel_turned_off"]:
+            if name in cloth.modifiers:
+                cloth.modifiers[name].show_viewport = True
+                cloth.modifiers[name].show_render = True
+
+        result = cloth.get("unravel_result")
+        if result is not None:
+            data = result.data
+            bpy.data.objects.remove(result)
+            if data.users == 0:
+                if isinstance(data, bpy.types.Mesh):
+                    bpy.data.meshes.remove(data)
+                else:
+                    bpy.data.hair_curves.remove(data)
+
+        backup = bpy.data.collections.get(BACKUP_COLLECTION)
+        if backup is not None:
+            for obj in [o for o in backup.objects if o.parent == cloth]:
+                move_to_collections(obj, cloth.users_collection)
+                obj.name = obj["unravel_name"]
+                del obj["unravel_name"]
+            if not backup.objects:
+                bpy.data.collections.remove(backup)
+
+        for key in ("unravel_applied_mesh", "unravel_turned_off", "unravel_result"):
+            if key in cloth:
+                del cloth[key]
+        self.report({'INFO'}, "Unravel is live again")
         return {'FINISHED'}
 
 
@@ -573,6 +798,10 @@ class UNRAVEL_PT_main(bpy.types.Panel):
             row.operator(UNRAVEL_OT_help.bl_idname, text="", icon='HELP')
             layout.operator(UNRAVEL_OT_make.bl_idname, icon='MOD_CLOTH')
             return
+        if is_applied(cloth):
+            layout.label(text=cloth.name + " is applied", icon='CHECKMARK')
+            layout.operator(UNRAVEL_OT_restore.bl_idname, icon='LOOP_BACK')
+            return
         row = layout.row()
         row.label(text=cloth.name, icon='MOD_CLOTH')
         row.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
@@ -587,6 +816,7 @@ class UNRAVEL_PT_main(bpy.types.Panel):
             box.label(text="Paint red where the cloth tears", icon='BRUSH_DATA')
             draw_inputs(box, cloth.modifiers["Unravel Tears"], ("Hole Size", "Edge Noise"))
             box.operator("object.mode_set", text="Done Painting", icon='CHECKMARK').mode = 'OBJECT'
+        layout.operator(UNRAVEL_OT_apply.bl_idname, icon='EXPORT')
 
 
 class UNRAVEL_PT_tears(bpy.types.Panel):
@@ -599,7 +829,8 @@ class UNRAVEL_PT_tears(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_cloth(context.active_object) is not None
+        cloth = get_cloth(context.active_object)
+        return cloth is not None and not is_applied(cloth)
 
     def draw(self, context):
         layout = self.layout
@@ -637,7 +868,8 @@ class ThreadsPanel:
 
     @classmethod
     def poll(cls, context):
-        return cls.get_modifier(context) is not None
+        cloth = get_cloth(context.active_object)
+        return cls.get_modifier(context) is not None and not is_applied(cloth)
 
     def draw_header(self, context):
         self.layout.prop(self.get_modifier(context), "show_viewport", text="")
@@ -678,7 +910,8 @@ class UNRAVEL_PT_material(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_cloth(context.active_object) is not None
+        cloth = get_cloth(context.active_object)
+        return cloth is not None and not is_applied(cloth)
 
     def draw(self, context):
         layout = self.layout
@@ -711,7 +944,8 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_cloth(context.active_object) is not None
+        cloth = get_cloth(context.active_object)
+        return cloth is not None and not is_applied(cloth)
 
     def draw(self, context):
         layout = self.layout
@@ -743,6 +977,8 @@ class UNRAVEL_MT_object(bpy.types.Menu):
         layout.operator(UNRAVEL_OT_add_strand.bl_idname, text="Add Strand", icon='CURVE_BEZCURVE')
         layout.operator(UNRAVEL_OT_bake_tears.bl_idname, icon='MOD_CLOTH')
         layout.operator(UNRAVEL_OT_unbake_tears.bl_idname, icon='LOOP_BACK')
+        layout.operator(UNRAVEL_OT_apply.bl_idname, icon='EXPORT')
+        layout.operator(UNRAVEL_OT_restore.bl_idname, icon='LOOP_BACK')
         layout.operator_menu_enum(UNRAVEL_OT_apply_preset.bl_idname, "preset", text="Presets", icon='PRESET')
         layout.separator()
         layout.operator(UNRAVEL_OT_help.bl_idname, icon='HELP')
@@ -770,6 +1006,8 @@ classes = (
     UNRAVEL_OT_remove_strand,
     UNRAVEL_OT_bake_tears,
     UNRAVEL_OT_unbake_tears,
+    UNRAVEL_OT_apply,
+    UNRAVEL_OT_restore,
     UNRAVEL_OT_help,
     UNRAVEL_OT_randomize_seed,
     UNRAVEL_OT_apply_preset,
