@@ -15,7 +15,7 @@ Scale
   Unravel expects real-world size (1 unit = 1 metre) and sets Scale from
   the scene's Unit Scale. If the cloth is 10 times too big, set Scale
   to 10. Raise it on a correctly sized cloth for chunkier threads.
-  
+
 Tears
   Hole Size ........ how far holes eat into the painted area (0 = no holes)
   Edge Noise ....... how ragged the edges are
@@ -32,6 +32,8 @@ Fray Threads and Stray Threads
   Viewport Density . show fewer threads while working; renders show all
   Density, Length .. how many threads, and how long
   Clumping, Curl, Frizz, Droop ... the character of the threads
+  Bridges .......... threads that stay joined across narrow gaps, and
+                      how much they sag
   Surface Contact .. keeps threads from sinking into the cloth
 
 Thread Material
@@ -40,7 +42,8 @@ Thread Material
 
 Strands
   Hand-drawn loose threads. Use Add Strand (or Shift+A > Unravel Strand),
-  draw on the cloth, then press Tab when done.
+  draw on the cloth, then press Tab when done. The X on a strand's box 
+  deletes it.
 
 
 ANIMATION AND SIMULATION
@@ -57,7 +60,7 @@ EXPORT (Apply Unravel, bottom of the main panel)
   Threads as Mesh: thin tubes for FBX, glTF and game engines. Sides and
     Detail set the weight; the face count is shown after applying.
   Threads as Hair: hair curves for Blender, Alembic and USD.
-  Rigged cloth: tick Skin Threads to Rig so the threads bend with it.
+  Rigged cloth: keep Skin Threads to Rig ticked so the threads bend with it.
   Restore Unravel brings the live setup back from a hidden backup.
   Animated cloth: no need to apply. Export the live scene to Alembic;
     the cloth and threads animate.

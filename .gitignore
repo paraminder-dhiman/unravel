@@ -1,3 +1,4 @@
 *.zip
 .vscode/
 *.blend1
+dist\

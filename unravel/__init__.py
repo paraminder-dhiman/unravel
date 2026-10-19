@@ -6,6 +6,7 @@ ASSET_FILE = os.path.join(os.path.dirname(__file__), "assets", "unravel_nodes.bl
 HELP_FILE = os.path.join(os.path.dirname(__file__), "Help.txt")
 GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand", "Unravel Thread Mesh")
 BACKUP_COLLECTION = "Unravel Backup"
+NODES_VERSION = 1
 
 
 TEAR_INPUTS = ("Hole Size", "Edge Noise", "Noise Scale", "Edge Smoothing", "Detail", "Seed")
@@ -153,6 +154,13 @@ def load_node_groups():
         return
     with bpy.data.libraries.load(ASSET_FILE, link=False) as (data_from, data_to):
         data_to.node_groups = [name for name in data_from.node_groups if name in missing]
+    for group in data_to.node_groups:
+        group["unravel_version"] = NODES_VERSION
+
+
+def nodes_outdated():
+    return any(group.get("unravel_version", 0) < NODES_VERSION for group in bpy.data.node_groups
+               if group.name in GROUP_NAMES and group.library is None)
 
 
 def find_input(modifier, name):
@@ -713,6 +721,24 @@ class UNRAVEL_OT_restore(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class UNRAVEL_OT_update_nodes(bpy.types.Operator):
+    bl_idname = "unravel.update_nodes"
+    bl_label = "Update Node Groups"
+    bl_description = "Swap this file's Unravel node groups for the ones in the installed version. Settings and paint are kept"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        old = [(group, group.name) for group in bpy.data.node_groups if group.name in GROUP_NAMES and group.library is None]
+        for group, name in old:
+            group.name = name + " Old"
+        load_node_groups()
+        for group, name in old:
+            group.user_remap(bpy.data.node_groups[name])
+            bpy.data.node_groups.remove(group)
+        self.report({'INFO'}, "Unravel node groups updated")
+        return {'FINISHED'}
+
+
 class UNRAVEL_OT_help(bpy.types.Operator):
     bl_idname = "unravel.help"
     bl_label = "Unravel Help"
@@ -792,6 +818,10 @@ class UNRAVEL_PT_main(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         cloth = get_cloth(context.active_object)
+        if nodes_outdated():
+            box = layout.box()
+            box.label(text="Made with an older Unravel", icon='ERROR')
+            box.operator(UNRAVEL_OT_update_nodes.bl_idname, icon='FILE_REFRESH')
         if cloth is None:
             row = layout.row()
             row.label(text="Select a cloth object", icon='INFO')
@@ -1008,6 +1038,7 @@ classes = (
     UNRAVEL_OT_unbake_tears,
     UNRAVEL_OT_apply,
     UNRAVEL_OT_restore,
+    UNRAVEL_OT_update_nodes,
     UNRAVEL_OT_help,
     UNRAVEL_OT_randomize_seed,
     UNRAVEL_OT_apply_preset,

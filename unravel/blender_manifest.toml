@@ -1,14 +1,14 @@
 schema_version = "1.0.0"
 
 id = "unravel"
-version = "0.1.0"
+version = "1.0.0"
 name = "Unravel"
 tagline = "Tear holes in cloth and grow frayed threads around them"
-maintainer = "Paraminder Dhiman"
+maintainer = "Paraminder Dhiman <paramindersd@gmail.com>"
 type = "add-on"
 website = "https://github.com/paraminder-dhiman/unravel"
 
-tags = ["Geometry Nodes", "Modeling"]
+tags = ["Geometry Nodes", "Modeling", "Mesh"]
 
 blender_version_min = "5.2.0"
 
