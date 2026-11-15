@@ -1,4 +1,5 @@
 import bpy
+import numpy as np
 import os
 import random
 
@@ -6,13 +7,14 @@ ASSET_FILE = os.path.join(os.path.dirname(__file__), "assets", "unravel_nodes.bl
 HELP_FILE = os.path.join(os.path.dirname(__file__), "Help.txt")
 GROUP_NAMES = ("Unravel Tears", "Unravel Threads", "Unravel Strand", "Unravel Thread Mesh")
 BACKUP_COLLECTION = "Unravel Backup"
-NODES_VERSION = 1
+NODES_VERSION = 2
 
 
 TEAR_INPUTS = ("Hole Size", "Edge Noise", "Noise Scale", "Edge Smoothing", "Detail", "Seed")
 THICKNESS_INPUTS = ("Thickness", "Lip Width", "Whole Cloth")
 THREAD_SHAPE_INPUTS = ("Density", "Length", "Length Random", "Root Width", "Tip Width")
-THREAD_STYLE_INPUTS = ("Clumping", "Direction Random", "Curl Radius", "Curl Turns", "Frizz", "Frizz Waves",
+DIRECTION_INPUTS = ("Flow", "Aim", "Direction Random", "Follow Curvature", "Stay in Hole")
+THREAD_STYLE_INPUTS = ("Clumping", "Curl Radius", "Curl Turns", "Frizz", "Frizz Waves",
                        "Droop", "Resolution", "Seed")
 CONTACT_INPUTS = ("Surface Contact", "Contact Offset", "Contact Depth")
 BRIDGE_INPUTS = ("Bridges", "Bridge Gap", "Bridge Sag")
@@ -34,6 +36,15 @@ STRAY_VALUES = {
     "Droop": 0.6,
     "Seed": 1,
     "Direction Random": 0.3,
+    "Flow": 0.4,
+    "Follow Curvature": True,
+}
+
+# New setups point fray into the hole and keep it there; v1.0 files keep their own settings
+FRAY_VALUES = {
+    "Flow": 0.7,
+    "Follow Curvature": True,
+    "Stay in Hole": True,
 }
 
 
@@ -45,12 +56,14 @@ PRESETS = {
                        "Tip Width": 0.0012, "Clumping": 0.65, "Direction Random": 0.25,
                        "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.24, "Frizz Waves": 1.2,
                        "Droop": 0.25, "Resolution": 24, "Bridges": 0.0, "Bridge Gap": 0.3,
-                       "Bridge Sag": 0.05},
+                       "Bridge Sag": 0.05,
+                       "Flow": 0.6, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 70, "Length": 0.1, "Length Random": 0.7, "Root Width": 0.0018,
-                         "Tip Width": 0.0012, "Clumping": 0.15, "Direction Random": 0.12,
+                         "Tip Width": 0.0012, "Clumping": -0.4, "Direction Random": 0.12,
                          "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.25, "Frizz Waves": 1.2,
                          "Droop": 0.35, "Resolution": 64, "Bridges": 0.4, "Bridge Gap": 0.3,
-                         "Bridge Sag": 0.05},
+                         "Bridge Sag": 0.05,
+                         "Flow": 0.3, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "CANVAS": {
         "Unravel Tears": {"Edge Noise": 0.55, "Noise Scale": 11.0, "Edge Smoothing": 10, "Thickness": 0.003,
@@ -58,12 +71,14 @@ PRESETS = {
         "Unravel Fray": {"Density": 420.0, "Length": 0.035, "Length Random": 0.7, "Root Width": 0.0012,
                        "Tip Width": 0.0007, "Clumping": 0.45, "Direction Random": 0.3, "Curl Radius": 0.0006,
                        "Curl Turns": 2.5, "Frizz": 0.24, "Frizz Waves": 1.3, "Droop": 0.05, "Resolution": 12,
-                       "Bridges": 0.0, "Bridge Gap": 0.2, "Bridge Sag": 0.03},
+                       "Bridges": 0.0, "Bridge Gap": 0.2, "Bridge Sag": 0.03,
+                       "Flow": 0.8, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 42, "Length": 0.07, "Length Random": 0.6, "Root Width": 0.0012,
                          "Tip Width": 0.0008, "Clumping": 0.1, "Direction Random": 0.1,
                          "Curl Radius": 0.0008, "Curl Turns": 2.0, "Frizz": 0.2, "Frizz Waves": 1.3,
                          "Droop": 0.4, "Resolution": 40, "Bridges": 0.2, "Bridge Gap": 0.2,
-                         "Bridge Sag": 0.03},
+                         "Bridge Sag": 0.03,
+                         "Flow": 0.5, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "DENIM": {
         "Unravel Tears": {"Edge Noise": 0.6, "Noise Scale": 40.0, "Edge Smoothing": 8, "Thickness": 0.0012,
@@ -71,12 +86,14 @@ PRESETS = {
         "Unravel Fray": {"Density": 1500.0, "Length": 0.008, "Length Random": 0.8, "Root Width": 0.0005,
                        "Tip Width": 0.0003, "Clumping": 0.6, "Direction Random": 0.35, "Curl Radius": 0.0003,
                        "Curl Turns": 2.5, "Frizz": 0.44, "Frizz Waves": 1.5, "Droop": 0.1, "Resolution": 10,
-                       "Bridges": 0.0, "Bridge Gap": 0.05, "Bridge Sag": 0.03},
+                       "Bridges": 0.0, "Bridge Gap": 0.05, "Bridge Sag": 0.03,
+                       "Flow": 0.7, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 170, "Length": 0.028, "Length Random": 0.5, "Root Width": 0.0005,
                          "Tip Width": 0.0004, "Clumping": 0.25, "Direction Random": 0.12,
                          "Curl Radius": 0.0004, "Curl Turns": 2.5, "Frizz": 0.25, "Frizz Waves": 1.5,
                          "Droop": 0.55, "Resolution": 40, "Bridges": 0.05, "Bridge Gap": 0.05,
-                         "Bridge Sag": 0.03},
+                         "Bridge Sag": 0.03,
+                         "Flow": 0.4, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "TWEED": {
         "Unravel Tears": {"Edge Noise": 0.65, "Noise Scale": 35.0, "Edge Smoothing": 5, "Thickness": 0.003,
@@ -85,12 +102,14 @@ PRESETS = {
                        "Tip Width": 0.00025, "Clumping": 0.3, "Direction Random": 0.35,
                        "Curl Radius": 0.0003, "Curl Turns": 2.5, "Frizz": 0.56, "Frizz Waves": 2.5,
                        "Droop": 0.15, "Resolution": 14, "Bridges": 0.0, "Bridge Gap": 0.03,
-                       "Bridge Sag": 0.08},
+                       "Bridge Sag": 0.08,
+                       "Flow": 0.5, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 140, "Length": 0.025, "Length Random": 0.7, "Root Width": 0.0006,
-                         "Tip Width": 0.00025, "Clumping": 0.1, "Direction Random": 0.3,
+                         "Tip Width": 0.00025, "Clumping": -0.3, "Direction Random": 0.3,
                          "Curl Radius": 0.0004, "Curl Turns": 3.0, "Frizz": 0.45, "Frizz Waves": 1.5,
                          "Droop": 0.3, "Resolution": 28, "Bridges": 0.1, "Bridge Gap": 0.03,
-                         "Bridge Sag": 0.08},
+                         "Bridge Sag": 0.08,
+                         "Flow": 0.3, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "LINEN": {
         "Unravel Tears": {"Edge Noise": 0.55, "Noise Scale": 45.0, "Edge Smoothing": 8, "Thickness": 0.0008,
@@ -98,12 +117,14 @@ PRESETS = {
         "Unravel Fray": {"Density": 1800.0, "Length": 0.009, "Length Random": 0.8, "Root Width": 0.0004,
                        "Tip Width": 0.0002, "Clumping": 0.4, "Direction Random": 0.35, "Curl Radius": 0.0003,
                        "Curl Turns": 2.5, "Frizz": 0.36, "Frizz Waves": 2.0, "Droop": 0.25, "Resolution": 10,
-                       "Bridges": 0.0, "Bridge Gap": 0.04, "Bridge Sag": 0.06},
+                       "Bridges": 0.0, "Bridge Gap": 0.04, "Bridge Sag": 0.06,
+                       "Flow": 0.7, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 154, "Length": 0.03, "Length Random": 0.7, "Root Width": 0.00035,
                          "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.15,
                          "Curl Radius": 0.0004, "Curl Turns": 2.0, "Frizz": 0.3, "Frizz Waves": 1.5,
                          "Droop": 0.35, "Resolution": 32, "Bridges": 0.15, "Bridge Gap": 0.04,
-                         "Bridge Sag": 0.06},
+                         "Bridge Sag": 0.06,
+                         "Flow": 0.4, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "COTTON": {
         "Unravel Tears": {"Edge Noise": 0.5, "Noise Scale": 50.0, "Edge Smoothing": 8, "Thickness": 0.0005,
@@ -112,12 +133,14 @@ PRESETS = {
                        "Tip Width": 0.00015, "Clumping": 0.3, "Direction Random": 0.35,
                        "Curl Radius": 0.0002, "Curl Turns": 2.5, "Frizz": 0.52, "Frizz Waves": 2.5,
                        "Droop": 0.25, "Resolution": 10, "Bridges": 0.0, "Bridge Gap": 0.03,
-                       "Bridge Sag": 0.08},
+                       "Bridge Sag": 0.08,
+                       "Flow": 0.7, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 182, "Length": 0.02, "Length Random": 0.7, "Root Width": 0.00025,
                          "Tip Width": 0.00015, "Clumping": 0.1, "Direction Random": 0.2,
                          "Curl Radius": 0.0003, "Curl Turns": 2.5, "Frizz": 0.4, "Frizz Waves": 1.5,
                          "Droop": 0.35, "Resolution": 24, "Bridges": 0.1, "Bridge Gap": 0.03,
-                         "Bridge Sag": 0.08},
+                         "Bridge Sag": 0.08,
+                         "Flow": 0.4, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "SILK": {
         "Unravel Tears": {"Edge Noise": 0.35, "Noise Scale": 40.0, "Edge Smoothing": 12, "Thickness": 0.0003,
@@ -125,25 +148,29 @@ PRESETS = {
         "Unravel Fray": {"Density": 2600.0, "Length": 0.012, "Length Random": 0.7, "Root Width": 0.0002,
                        "Tip Width": 0.00012, "Clumping": 0.5, "Direction Random": 0.2, "Curl Radius": 0.0001,
                        "Curl Turns": 2.0, "Frizz": 0.096, "Frizz Waves": 1.0, "Droop": 0.5, "Resolution": 14,
-                       "Bridges": 0.0, "Bridge Gap": 0.05, "Bridge Sag": 0.12},
+                       "Bridges": 0.0, "Bridge Gap": 0.05, "Bridge Sag": 0.12,
+                       "Flow": 0.8, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 182, "Length": 0.03, "Length Random": 0.6, "Root Width": 0.00018,
                          "Tip Width": 0.00012, "Clumping": 0.15, "Direction Random": 0.12,
                          "Curl Radius": 0.0002, "Curl Turns": 1.5, "Frizz": 0.12, "Frizz Waves": 1.2,
                          "Droop": 0.5, "Resolution": 40, "Bridges": 0.2, "Bridge Gap": 0.05,
-                         "Bridge Sag": 0.12},
+                         "Bridge Sag": 0.12,
+                         "Flow": 0.6, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
     "GAUZE": {
         "Unravel Tears": {"Edge Noise": 0.75, "Noise Scale": 30.0, "Edge Smoothing": 6, "Thickness": 0.0004,
                         "Lip Width": 0.003},
         "Unravel Fray": {"Density": 700.0, "Length": 0.012, "Length Random": 0.8, "Root Width": 0.00035,
-                       "Tip Width": 0.0002, "Clumping": 0.1, "Direction Random": 0.35, "Curl Radius": 0.0003,
+                       "Tip Width": 0.0002, "Clumping": -0.2, "Direction Random": 0.35, "Curl Radius": 0.0003,
                        "Curl Turns": 2.5, "Frizz": 0.32, "Frizz Waves": 1.5, "Droop": 0.35, "Resolution": 14,
-                       "Bridges": 0.0, "Bridge Gap": 0.04, "Bridge Sag": 0.1},
+                       "Bridges": 0.0, "Bridge Gap": 0.04, "Bridge Sag": 0.1,
+                       "Flow": 0.6, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": True},
         "Unravel Strays": {"Density": 140, "Length": 0.035, "Length Random": 0.7, "Root Width": 0.0003,
                          "Tip Width": 0.0002, "Clumping": 0.0, "Direction Random": 0.2,
                          "Curl Radius": 0.0004, "Curl Turns": 2.0, "Frizz": 0.3, "Frizz Waves": 1.5,
                          "Droop": 0.4, "Resolution": 32, "Bridges": 0.2, "Bridge Gap": 0.04,
-                         "Bridge Sag": 0.1},
+                         "Bridge Sag": 0.1,
+                         "Flow": 0.3, "Aim": "Across Edge", "Follow Curvature": True, "Stay in Hole": False},
     },
 }
 
@@ -297,6 +324,110 @@ def update_scale(self, context):
     apply_scale(self)
 
 
+HOLE_ATTR = "unravel_existing_hole"
+MARK_ATTR = "unravel_tear_mark"
+_setting_size = False
+
+
+def open_loops(mesh, scale):
+    """The mesh's open edge loops, as (edge indices, real-world length) pairs."""
+    loop_edges = np.empty(len(mesh.loops), dtype=np.int32)
+    mesh.loops.foreach_get("edge_index", loop_edges)
+    faces_per_edge = np.bincount(loop_edges, minlength=len(mesh.edges))
+    open_edges = np.flatnonzero(faces_per_edge == 1)
+    if not len(open_edges):
+        return []
+    ends = np.empty(len(mesh.edges) * 2, dtype=np.int32)
+    mesh.edges.foreach_get("vertices", ends)
+    ends = ends.reshape(-1, 2)
+    co = np.empty(len(mesh.vertices) * 3, dtype=np.float32)
+    mesh.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    parent = {}
+
+    def root(v):
+        parent.setdefault(v, v)
+        while parent[v] != v:
+            parent[v] = parent[parent[v]]
+            v = parent[v]
+        return v
+
+    for e in open_edges:
+        a, b = ends[e]
+        parent[root(a)] = root(b)
+    groups = {}
+    for e in open_edges:
+        groups.setdefault(root(ends[e][0]), []).append(e)
+    loops = []
+    for edges in groups.values():
+        edges = np.array(edges)
+        lengths = np.linalg.norm(co[ends[edges, 0]] - co[ends[edges, 1]], axis=1)
+        loops.append((edges, float(lengths.sum()) / scale))
+    return loops
+
+
+def suggest_boundary_size(loops):
+    """Find the biggest jump (at least 2x) in loop lengths: loops above it are the mesh's outer edges."""
+    lengths = sorted((length for _, length in loops), reverse=True)
+    if not lengths:
+        return 0.0
+    lengths = [length for length in lengths if length >= lengths[0] * 0.02]   # ignore tiny slivers
+    best, cut = 0.0, lengths[0] * 1.01
+    for longer, shorter in zip(lengths, lengths[1:]):
+        if shorter > 0 and longer / shorter > max(best, 2.0):
+            best, cut = longer / shorter, (longer * shorter) ** 0.5
+    return cut
+
+
+def detect_holes(cloth):
+    """Mark the cloth's existing holes for the Tears node group, or clear the marks."""
+    if is_baked(cloth) or is_applied(cloth):
+        return
+    mesh = cloth.data
+    if not cloth.unravel_detect_holes:
+        if HOLE_ATTR in mesh.attributes:
+            mesh.attributes.remove(mesh.attributes[HOLE_ATTR])
+        cloth["unravel_detect_status"] = (0, 0)
+        cloth.update_tag()
+        return
+    loops = open_loops(mesh, cloth.unravel_scale)
+    marks = np.zeros(len(mesh.edges), dtype=np.int32)
+    if MARK_ATTR in mesh.attributes:
+        mesh.attributes[MARK_ATTR].data.foreach_get("value", marks)
+    flags = np.zeros(len(mesh.edges), dtype=bool)
+    holes = skipped = 0
+    for edges, length in loops:
+        if (marks[edges] == 1).any():
+            use = True
+        elif (marks[edges] == -1).any():
+            use = False
+        else:
+            use = not cloth.unravel_ignore_boundaries or length <= cloth.unravel_boundary_size
+        flags[edges] = use
+        holes += use
+        skipped += not use
+    attr = mesh.attributes.get(HOLE_ATTR) or mesh.attributes.new(HOLE_ATTR, 'BOOLEAN', 'EDGE')
+    attr.data.foreach_set("value", flags)
+    cloth["unravel_detect_status"] = (holes, skipped)
+    mesh.update()
+    cloth.update_tag()
+
+
+def update_detect(self, context):
+    global _setting_size
+    if self.unravel_detect_holes and not self.get("unravel_boundary_set"):
+        self["unravel_boundary_set"] = True
+        _setting_size = True
+        self.unravel_boundary_size = suggest_boundary_size(open_loops(self.data, self.unravel_scale))
+        _setting_size = False
+    detect_holes(self)
+
+
+def update_boundary(self, context):
+    if not _setting_size:
+        detect_holes(self)
+
+
 def draw_inputs(layout, modifier, names):
     col = layout.column()
     col.use_property_split = True
@@ -311,6 +442,38 @@ def draw_inputs(layout, modifier, names):
             row.operator(UNRAVEL_OT_randomize_seed.bl_idname, text="", icon='FILE_REFRESH').modifier_name = modifier.name
         else:
             col.prop(socket, "value", text=name)
+
+
+def draw_existing_holes(layout, context, cloth):
+    col = layout.column()
+    row = col.row(align=True)
+    row.prop(cloth, "unravel_detect_holes")
+    row.operator(UNRAVEL_OT_refresh_holes.bl_idname, text="", icon='FILE_REFRESH')
+    sub = col.column()
+    sub.enabled = cloth.unravel_detect_holes
+    sub.prop(cloth, "unravel_ignore_boundaries")
+    size = sub.row()
+    size.enabled = cloth.unravel_detect_holes and cloth.unravel_ignore_boundaries
+    size.prop(cloth, "unravel_boundary_size")
+    if cloth.unravel_detect_holes:
+        holes, skipped = cloth.get("unravel_detect_status", (0, 0))
+        text = f"{holes} hole{'s' if holes != 1 else ''}"
+        if skipped:
+            text += f" · {skipped} boundar{'ies' if skipped != 1 else 'y'} skipped"
+        sub.label(text=text, icon='INFO')
+    if context.mode == 'EDIT_MESH':
+        row = col.row(align=True)
+        row.operator(UNRAVEL_OT_mark_tear.bl_idname, text="Mark as Tear", icon='ADD').mode = 'MARK'
+        row.operator(UNRAVEL_OT_mark_tear.bl_idname, text="Clear Tear", icon='REMOVE').mode = 'CLEAR'
+
+
+def draw_width_note(layout, context):
+    space = context.space_data
+    if space is None or space.type != 'VIEW_3D' or space.shading.type not in {'SOLID', 'WIREFRAME'}:
+        return
+    col = layout.column(align=True)
+    col.label(text="Solid view hides thread width", icon='INFO')
+    col.label(text="See it in Material Preview or Rendered", icon='BLANK1')
 
 
 class UNRAVEL_OT_make(bpy.types.Operator):
@@ -350,6 +513,8 @@ class UNRAVEL_OT_make(bpy.types.Operator):
         fray.node_group = bpy.data.node_groups["Unravel Threads"]
         set_input(fray, "Cloth", cloth)
         set_input(fray, "UV Map", uv_name)
+        for input_name, value in FRAY_VALUES.items():
+            set_input(fray, input_name, value)
 
         strays = threads.modifiers.new("Unravel Strays", 'NODES')
         strays.node_group = bpy.data.node_groups["Unravel Threads"]
@@ -389,6 +554,86 @@ class UNRAVEL_OT_paint_tears(bpy.types.Operator):
         cloth.vertex_groups.active_index = cloth.vertex_groups["Tears"].index
         bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
         return {'FINISHED'}
+
+class UNRAVEL_OT_refresh_holes(bpy.types.Operator):
+    bl_idname = "unravel.refresh_holes"
+    bl_label = "Refresh Holes"
+    bl_description = "Find the mesh's holes again, after you change the mesh"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'OBJECT' and cloth is not None and cloth.unravel_detect_holes \
+            and not is_baked(cloth) and not is_applied(cloth)
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        detect_holes(cloth)
+        holes, skipped = cloth["unravel_detect_status"]
+        self.report({'INFO'}, f"Found {holes} holes, skipped {skipped} boundaries")
+        return {'FINISHED'}
+
+
+class UNRAVEL_OT_mark_tear(bpy.types.Operator):
+    bl_idname = "unravel.mark_tear"
+    bl_label = "Mark as Tear"
+    bl_description = "Mark or clear the holes touching the selected edges, whatever their size"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    mode: bpy.props.EnumProperty(items=(
+        ('MARK', "Mark as Tear", "Always treat the selected holes as tears"),
+        ('CLEAR', "Clear Tear", "Never treat the selected holes as tears"),
+    ))
+
+    @classmethod
+    def description(cls, context, properties):
+        if properties.mode == 'CLEAR':
+            return "Stop the holes touching the selected edges from getting torn edges and threads"
+        return "Give the holes touching the selected edges torn edges and threads, whatever their size"
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return context.mode == 'EDIT_MESH' and cloth is not None and not is_baked(cloth) and not is_applied(cloth)
+
+    def execute(self, context):
+        cloth = get_cloth(context.active_object)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        mesh = cloth.data
+        selected = np.zeros(len(mesh.edges), dtype=bool)
+        mesh.edges.foreach_get("select", selected)
+        marks = np.zeros(len(mesh.edges), dtype=np.int32)
+        if MARK_ATTR in mesh.attributes:
+            mesh.attributes[MARK_ATTR].data.foreach_get("value", marks)
+        touched = 0
+        for edges, _ in open_loops(mesh, cloth.unravel_scale):
+            if selected[edges].any():
+                marks[edges] = 1 if self.mode == 'MARK' else -1
+                touched += 1
+        if touched:
+            attr = mesh.attributes.get(MARK_ATTR) or mesh.attributes.new(MARK_ATTR, 'INT', 'EDGE')
+            attr.data.foreach_set("value", marks)
+            if cloth.unravel_detect_holes:
+                detect_holes(cloth)
+            else:
+                cloth.unravel_detect_holes = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        if not touched:
+            self.report({'WARNING'}, "Select an edge on the border of a hole first")
+            return {'CANCELLED'}
+        verb = "Marked" if self.mode == 'MARK' else "Cleared"
+        self.report({'INFO'}, f"{verb} {touched} hole{'s' if touched != 1 else ''}")
+        return {'FINISHED'}
+
+
+def draw_edge_menu(self, context):
+    if get_cloth(context.active_object) is None:
+        return
+    self.layout.separator()
+    self.layout.operator(UNRAVEL_OT_mark_tear.bl_idname, text="Unravel · Mark as Tear").mode = 'MARK'
+    self.layout.operator(UNRAVEL_OT_mark_tear.bl_idname, text="Unravel · Clear Tear").mode = 'CLEAR'
+
 
 class UNRAVEL_OT_add_strand(bpy.types.Operator):
     bl_idname = "unravel.add_strand"
@@ -840,7 +1085,7 @@ class UNRAVEL_PT_main(bpy.types.Panel):
         if not cloth.data.uv_layers:
             box = layout.box()
             box.label(text="This cloth has no UVs", icon='ERROR')
-            box.label(text="Threads need UVs to follow the weave")
+            box.label(text="Without UVs, threads need Flow above 0")
         if context.mode == 'PAINT_WEIGHT':
             box = layout.box()
             box.label(text="Paint red where the cloth tears", icon='BRUSH_DATA')
@@ -875,16 +1120,44 @@ class UNRAVEL_PT_tears(bpy.types.Panel):
         layout.operator(UNRAVEL_OT_paint_tears.bl_idname, icon='BRUSH_DATA')
         draw_inputs(layout, tears, TEAR_INPUTS)
         layout.separator()
+        draw_existing_holes(layout, context, cloth)
+        layout.separator()
         draw_inputs(layout, tears, THICKNESS_INPUTS)
         layout.separator()
         layout.operator(UNRAVEL_OT_bake_tears.bl_idname, icon='MOD_CLOTH')
+
+
+class UNRAVEL_PT_threads(bpy.types.Panel):
+    bl_label = "Threads"
+    bl_idname = "UNRAVEL_PT_threads"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Unravel"
+    bl_parent_id = "UNRAVEL_PT_main"
+
+    @classmethod
+    def poll(cls, context):
+        cloth = get_cloth(context.active_object)
+        return cloth is not None and not is_applied(cloth) and get_threads(cloth) is not None
+
+    def draw(self, context):
+        pass
+
+
+THREAD_GROUPS = (
+    ("unravel_shape", "Shape", False, THREAD_SHAPE_INPUTS),
+    ("unravel_direction", "Direction", False, DIRECTION_INPUTS),
+    ("unravel_style", "Style", True, THREAD_STYLE_INPUTS),
+    ("unravel_bridges", "Bridges", True, BRIDGE_INPUTS),
+    ("unravel_contact", "Surface Contact", True, CONTACT_INPUTS),
+)
 
 
 class ThreadsPanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Unravel"
-    bl_parent_id = "UNRAVEL_PT_tears"
+    bl_parent_id = "UNRAVEL_PT_threads"
     bl_options = {'DEFAULT_CLOSED'}
     modifier_name = ""
 
@@ -909,14 +1182,14 @@ class ThreadsPanel:
         modifier = self.get_modifier(context)
         layout.enabled = modifier.show_viewport
         draw_inputs(layout, modifier, ("Viewport Density",))
-        layout.separator()
-        draw_inputs(layout, modifier, THREAD_SHAPE_INPUTS)
-        layout.separator()
-        draw_inputs(layout, modifier, THREAD_STYLE_INPUTS)
-        layout.separator()
-        draw_inputs(layout, modifier, BRIDGE_INPUTS)
-        layout.separator()
-        draw_inputs(layout, modifier, CONTACT_INPUTS)
+        for idname, label, closed, names in THREAD_GROUPS:
+            header, body = layout.panel(idname, default_closed=closed)
+            header.label(text=label)
+            if body is None:
+                continue
+            if idname == "unravel_shape":
+                draw_width_note(body, context)
+            draw_inputs(body, modifier, names)
 
 
 class UNRAVEL_PT_fray(ThreadsPanel, bpy.types.Panel):
@@ -985,6 +1258,7 @@ class UNRAVEL_PT_strands(bpy.types.Panel):
         if not strands:
             layout.label(text="No drawn strands yet", icon='INFO')
             return
+        draw_width_note(layout, context)
         for modifier in strands:
             box = layout.box()
             row = box.row()
@@ -1032,6 +1306,8 @@ def draw_object_menu(self, context):
 classes = (
     UNRAVEL_OT_make,
     UNRAVEL_OT_paint_tears,
+    UNRAVEL_OT_refresh_holes,
+    UNRAVEL_OT_mark_tear,
     UNRAVEL_OT_add_strand,
     UNRAVEL_OT_remove_strand,
     UNRAVEL_OT_bake_tears,
@@ -1045,6 +1321,7 @@ classes = (
     UNRAVEL_MT_object,
     UNRAVEL_PT_main,
     UNRAVEL_PT_tears,
+    UNRAVEL_PT_threads,
     UNRAVEL_PT_fray,
     UNRAVEL_PT_strays,
     UNRAVEL_PT_material,
@@ -1071,7 +1348,30 @@ def register():
         soft_max=100.0,
         update=update_scale,
     )
+    bpy.types.Object.unravel_detect_holes = bpy.props.BoolProperty(
+        name="Detect Holes",
+        description="Give holes already in the mesh torn edges and threads, without painting them",
+        default=False,
+        update=update_detect,
+    )
+    bpy.types.Object.unravel_ignore_boundaries = bpy.props.BoolProperty(
+        name="Ignore Boundaries",
+        description="Leave the mesh's own outer edges alone (hems, cuffs, necklines): "
+                    "open loops longer than Boundary Size",
+        default=True,
+        update=update_boundary,
+    )
+    bpy.types.Object.unravel_boundary_size = bpy.props.FloatProperty(
+        name="Boundary Size",
+        description="Open loops longer than this count as the mesh's outer edges, not holes. "
+                    "Set for you from the mesh when Detect Holes is first turned on",
+        default=0.0,
+        min=0.0,
+        subtype='DISTANCE',
+        update=update_boundary,
+    )
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_object_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_edges.append(draw_edge_menu)
     bpy.types.VIEW3D_MT_object.append(draw_object_submenu)
     bpy.types.VIEW3D_MT_add.append(draw_add_menu)
 
@@ -1081,6 +1381,10 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(draw_object_submenu)
     del bpy.types.Object.unravel_cloth_colour
     del bpy.types.Object.unravel_scale
+    del bpy.types.Object.unravel_detect_holes
+    del bpy.types.Object.unravel_ignore_boundaries
+    del bpy.types.Object.unravel_boundary_size
+    bpy.types.VIEW3D_MT_edit_mesh_edges.remove(draw_edge_menu)
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_object_menu)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

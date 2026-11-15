@@ -2,7 +2,7 @@ UNRAVEL · Torn cloth and frayed threads for Blender
 ====================================================
 
 QUICK START
-1. Select a cloth mesh. It needs UVs for the threads to follow the weave.
+1. Select a cloth mesh. With UVs, threads can also follow the weave.
 2. Right-click in the viewport and choose Make Unravel
    (or use the Unravel tab in the N sidebar).
 3. Click Paint Tears and paint red where the cloth should tear.
@@ -21,17 +21,47 @@ Tears
   Edge Noise ....... how ragged the edges are
   Noise Scale ...... size of the ragged bits
   Edge Smoothing ... smooths the stepped outline of each hole
+                      (spikes and tiny loose bits left by cutting are
+                      cleaned up for you, even on triangle meshes)
   Detail ........... extra subdivision for finer edges (heavier)
-  Thickness ........ how thick the torn edges look
+  Detect Holes ..... gives holes already in the mesh torn edges and
+                      threads, with no painting. Their outlines stay
+                      exactly as modelled
+    Ignore Boundaries  leaves the mesh's own outer edges alone (hems,
+                      cuffs, necklines). Untick it to fray those too
+    Boundary Size .. open loops longer than this count as outer edges.
+                      It is set for you the first time you turn on
+                      Detect Holes; the line below shows what it found
+    Fix one hole ... in Edit Mode, select an edge on its border and use
+                      Mark as Tear or Clear Tear (also in the Edge menu)
+    Refresh button . finds the holes again after you edit the mesh
+  Thickness ........ how thick the torn edges look. It eases off on
+                      tight curves so the edge can't fold through itself
   Lip Width ........ how far the thickness reaches from each hole
   Whole Cloth ...... makes the whole cloth solid
 
-Fray Threads and Stray Threads
+Threads (Fray Threads and Stray Threads)
   Two layers of threads: short dense fray, and long loose strays.
-  The checkbox in each title turns that layer on or off.
+  The checkbox in each title turns that layer on or off. Each layer's
+  settings are in groups you can open and close.
   Viewport Density . show fewer threads while working; renders show all
-  Density, Length .. how many threads, and how long
-  Clumping, Curl, Frizz, Droop ... the character of the threads
+  Shape ............ how many threads, how long, and how wide
+  Direction ........ which way the threads point
+    Flow ........... 0 follows the weave of the cloth, 1 points the
+                      threads into the hole
+    Aim ............ Across Edge points each thread straight into the
+                      hole from where it grows (works for any shape).
+                      Toward Centre points threads at the middle of
+                      their hole (tidiest on round holes)
+    Direction Random  breaks up how evenly the threads point
+    Follow Curvature  bends threads along the surface the cloth would
+                      have had, instead of sticking straight out
+    Stay in Hole ... shortens threads that would reach past the far
+                      side of their hole
+  Style ............ Clumping, Curl, Frizz and Droop: the character of
+                      the threads
+    Clumping ....... 1 gathers the tips together, -1 gathers the roots
+                      into tufts that fan out like grass, 0 is off
   Bridges .......... threads that stay joined across narrow gaps, and
                       how much they sag
   Surface Contact .. keeps threads from sinking into the cloth
@@ -76,10 +106,16 @@ TIPS
 TROUBLESHOOTING
   No threads appear
     · Paint some red: threads only grow along torn edges.
-    · Check the cloth has UVs (the panel warns you if not).
+    · Without UVs, set Flow above 0 (the panel warns you if there
+      are no UVs).
     · Check Viewport Density is above 0.
   Threads look white
     · Switch the viewport to Rendered (Z > Rendered).
+  Root Width and Tip Width seem to do nothing
+    · Solid view always draws threads as thin lines. Switch to Material
+      Preview or Rendered (Z key) to see their width.
+    · Widths are real-world sizes and stop at 2 cm. For a cloth that is
+      modelled too big, raise Scale instead.
   The viewport is slow
     · Lower Viewport Density, Detail, or Resolution.
 
